@@ -1,0 +1,25 @@
+{
+  "name": "zds-editor",
+  "version": "0.0.1",
+  "description": "Markdown editor used on Zeste de Savoir",
+  "main": "index.js",
+  "scripts": {
+    "watch": "watchify index.js -o 'exorcist dist/bundle.js.map > dist/bundle.js' -d",
+    "build": "browserify index.js --debug | exorcist dist/bundle.js.map > dist/bundle.js"
+  },
+  "keywords": [
+    "markdown",
+    "editor",
+    "codemirror"
+  ],
+  "author": "Sandhose <quentingliech@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "codemirror": "^5.11.0"
+  },
+  "devDependencies": {
+    "browserify": "^13.0.0",
+    "exorcist": "^0.4.0",
+    "watchify": "^3.7.0"
+  }
+}
