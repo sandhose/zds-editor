@@ -4,8 +4,8 @@
   "description": "Markdown editor used on Zeste de Savoir",
   "main": "index.js",
   "scripts": {
-    "watch": "watchify index.js -o 'exorcist dist/bundle.js.map > dist/bundle.js' -d",
-    "build": "browserify index.js --debug | exorcist dist/bundle.js.map > dist/bundle.js"
+    "watch": "watchify -t babelify -g uglifyify index.js -o 'exorcist dist/bundle.js.map > dist/bundle.js' -d",
+    "build": "browserify -t babelify -g uglifyify index.js --debug | exorcist dist/bundle.js.map > dist/bundle.js"
   },
   "keywords": [
     "markdown",
@@ -18,8 +18,11 @@
     "codemirror": "^5.11.0"
   },
   "devDependencies": {
+    "babel-preset-es2015": "^6.3.13",
+    "babelify": "^7.2.0",
     "browserify": "^13.0.0",
     "exorcist": "^0.4.0",
+    "uglifyify": "^3.0.1",
     "watchify": "^3.7.0"
   }
 }
