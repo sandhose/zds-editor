@@ -3,6 +3,10 @@ require("codemirror/addon/mode/loadmode");
 let codemirror = require("codemirror");
 
 class Editor {
+  /**
+   * @constructor
+   * @param {DOMNode} textarea
+   */
   constructor(textarea, options) {
     if(!textarea) throw new Error("No textarea provided");
     this.options = {
@@ -23,6 +27,9 @@ class Editor {
     wrapper.parentNode.insertBefore(this.toolbar, wrapper);
   }
 
+  /**
+   * Build the toolbar
+   */
   buildToolbar() {
     this.toolbar = document.createElement("div");
 
@@ -38,24 +45,86 @@ class Editor {
     this.addToolbarButton({ name: "-quote", type: "blockquote", level: -1, keymaps: ["Cmd-Alt-'", "Ctrl-Alt-'"] });
   }
 
+  /**
+   * @typedef Heading
+   * @type Object
+   * @property {number} level - The level of heading
+   * @property {string} text - The text of the heading
+   */
+
+  /**
+   * Get the heading level and text for a given text
+   * @param {string} text - The text to parse
+   * @return {Heading} The parsed heading
+   * @example
+   * editor.getHeading("## test");
+   * { level: 2, text: "test" }
+   */
   getHeading(text) {
     let match = text.match(/^(#{0,6})(.*)$/);
     return { level: match[1].length, text: match[2].trim() };
   }
 
+  /**
+   * Return the text representation of a Heading
+   * @param {Heading} heading
+   * @return {string} The text representation of the heading
+   * @example
+   * editor.setHeading({ level: 3, text: "Lorem ipsum"});
+   * "### Lorem ipsum"
+   */
   setHeading({ level, text }) {
     return ("#".repeat(level) + " " + text).replace(/^ /, "");
   }
 
+  /**
+   * @typedef Blockquote
+   * @type Object
+   * @property {number} level - The level of blockquote
+   * @property {string} text - The text of the blockquote
+   */
+
+  /**
+   * Get the quotation level and text for a given text
+   * @param {string} text - The text to parse
+   * @return {Blockquote} The parsed blockquote
+   * @example
+   * editor.getBlockquote("> > > nested");
+   * { level: 3, text: "nested" }
+   */
   getBlockquote(text) {
     let match = text.match(/^((> )*)(.*)$/);
     return { level: match[1].length / 2, text: match[3] };
   }
 
+  /**
+   * Return the text representation of a Blockquote
+   * @param {Blockquote} blockquote
+   * @return {string} The text representation of the blockquote
+   * @example
+   * editor.setBlockquote({ level: 1, text: "quote" });
+   * "> quote"
+   */
   setBlockquote({ level, text }) {
     return "> ".repeat(level) + text;
   }
 
+  /**
+   * @typedef Emphasis
+   * @type Object
+   * @property {number} level - The level of emphasis
+   * @property {string} text - The text of the emphasis
+   * @property {string} type - The type of the emphasis (* or _)
+   */
+
+  /**
+   * Get the emphasis level, text and type for a given text
+   * @param {string} text - The text to parse
+   * @return {Emphasis} The parsed emphasis
+   * @example
+   * editor.getEmphasis("__bold__");
+   * { level: 2, text: "bold", type: "_" }
+   */
   getEmphasis(text) {
     let start = text.charAt(0), match;
     if(start !== "*" && start !== "_") return { type: "*", level: 0, text };
@@ -67,16 +136,57 @@ class Editor {
     }
   }
 
+  /**
+   * Return the text representation of an Emphasis
+   * @param {Emphasis} emphasis
+   * @return {string} The text representation of the emphasis
+   * @example
+   * editor.setEmphasis({ text: "italic", level: 1, type: "*" });
+   * "*italic*"
+   */
   setEmphasis({ text, level, type }) {
     return type.repeat(level) + text + type.repeat(level);
   }
 
+  /**
+   * Sort a given array of positions
+   * @param {Pos[]} positions
+   * @return {Pos[]}
+   * @example
+   * editor.orderPosition([{ line: 4, ch: 7 }, { line: 4, ch: 5 }, { line: 8, ch: 42 }, { line: 2, ch: 9 }]);
+   * [{ line: 2, ch: 9 }, { line: 4, ch: 5 }, { line: 4, ch: 7 }, { line: 8, ch: 42 }]
+   */
   orderPositions(positions) {
     return positions.sort((a, b) => {
       return a.line == b.line ? a.ch >= b.ch : a.line >= b.line
     });
   }
 
+  /**
+   * @typedef Pos
+   * @type Object
+   * @property {number} line - The line number
+   * @property {number} ch - The character number
+   */
+
+  /**
+   * @typedef Range
+   * @type Object
+   * @property {Pos} anchor - The start of the range
+   * @property {Pos} head - The end of the range
+   */
+
+  /**
+   * Extract an array of range for the given lines (each line are separate ranges)
+   * @param {Range[]} [selections=this.cm.doc.listSelections()] - The selection to extract
+   * @param {boolean} [fullLine=false] - If true, each selection will be expanded to the full line
+   * @return {Range[]} All the extracted ranges
+   * @see Editor#mapRanges
+   * @example
+   * // Wraps the selected text with ~
+   * let ranges = editor.extractLines();
+   * editor.mapRanges(text => `~${text}~`, ranges);
+   */
   extractLines(selections, fullLine = false) {
     if(!selections) selections = this.cm.doc.listSelections();
 
@@ -114,6 +224,19 @@ class Editor {
     return ranges;
   }
 
+  /**
+   * @callback rangeMap
+   * @param {string} text - The input text
+   * @param {Range} range - The range of the text
+   * @return {(string|object)} The transformed text
+   */
+
+  /**
+   * Transform the text in each range using mapFunc
+   * @param {rangeMap} mapFunc
+   * @param {Range[]} ranges
+   * @see Editor#extractLines
+   */
   mapRanges(mapFunc, ranges) {
     let newSelections = ranges.map(({ anchor, head }) => {
       let rangeText = this.cm.doc.getRange(anchor, head);
@@ -142,6 +265,14 @@ class Editor {
     this.cm.doc.setSelections(newSelections);
   }
 
+  /**
+   * Execute a given action
+   * @param {object} action
+   * @param {string} action.type
+   * @param {} action.level
+   * @example
+   * editor.execute({ type: "heading", level: 5 });
+   */
   handleAction({ type, level }) {
     if(type === "emphasis") {
       let ranges = this.extractLines(this.cm.doc.listSelections());
@@ -183,6 +314,16 @@ class Editor {
     this.cm.focus();
   }
 
+  /**
+   * Add a button to the toolbar
+   * @param {object} opts
+   * @param {string} opts.name - The name of the button (if empty, no button will be added)
+   * @param {string} opts.type - The type of the button (will be passed to `handleAction`)
+   * @param {} opts.level - Arbitrary level (will be passed to `handleAction`)
+   * @param {string[]} opts.keymaps - An array of keymaps to bind to this action
+   * @example
+   * editor.addToolbarButton({ name: "bold", type: "emphasis", level: 2, keymaps: ["Cmd-B", "Ctrl-B"]});
+   */
   addToolbarButton({ name, type, level, keymaps }) {
     if(name) {
       let button = document.createElement("button");

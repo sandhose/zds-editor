@@ -1,11 +1,12 @@
 {
   "name": "zds-editor",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Markdown editor used on Zeste de Savoir",
   "main": "index.js",
   "scripts": {
-    "watch": "watchify -t babelify -g uglifyify index.js -o 'exorcist dist/bundle.js.map > dist/bundle.js' -d",
-    "build": "browserify -t babelify -g uglifyify index.js --debug | exorcist dist/bundle.js.map > dist/bundle.js"
+    "watch": "watchify -t babelify index.js -o 'exorcist dist/bundle.js.map > dist/bundle.js' -d",
+    "build": "browserify -t babelify index.js --debug | exorcist dist/bundle.js.map > dist/bundle.js",
+    "doc": "jsdoc -R ./README.md -P ./package.json -d ./doc/ ."
   },
   "keywords": [
     "markdown",
@@ -22,6 +23,7 @@
     "babelify": "^7.2.0",
     "browserify": "^13.0.0",
     "exorcist": "^0.4.0",
+    "jsdoc": "^3.4.0",
     "uglifyify": "^3.0.1",
     "watchify": "^3.7.0"
   }
