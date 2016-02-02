@@ -10,8 +10,7 @@ class Editor {
         name: "gfm",
         gitHubSpice: false
       },
-      extraKeys: {
-      },
+      extraKeys: {},
       tabMode: "indent",
       lineWrapping: true,
       modeURL: "/mode/%N/%N.js"
@@ -36,6 +35,8 @@ class Editor {
     this.addToolbarButton({ name: "h4", type: "heading", level: 4 });
     this.addToolbarButton({ name: "h5", type: "heading", level: 5 });
     this.addToolbarButton({ name: "h6", type: "heading", level: 6 });
+    this.addToolbarButton({ name: "+quote", type: "blockquote", level: 1, keymaps: ["Cmd-'", "Ctrl-'"] });
+    this.addToolbarButton({ name: "-quote", type: "blockquote", level: -1, keymaps: ["Cmd-Alt-'", "Ctrl-Alt-'"] });
   }
 
   getHeading(text) {
@@ -45,6 +46,15 @@ class Editor {
 
   setHeading({ level, text }) {
     return ("#".repeat(level) + " " + text).replace(/^ /, "");
+  }
+
+  getBlockquote(text) {
+    let match = text.match(/^((> )*)(.*)$/);
+    return { level: match[1].length / 2, text: match[3] };
+  }
+
+  setBlockquote({ level, text }) {
+    return "> ".repeat(level) + text;
   }
 
   getEmphasis(text) {
@@ -64,8 +74,9 @@ class Editor {
 
   handleAction({ type, level }) {
     if(type === "emphasis") {
-      let selections = this.cm.doc.getSelections().map(sel =>  {
-        let { type: emphType, level: emphLevel, text: innerText } = this.getEmphasis(sel);
+      let selections = this.cm.doc.listSelections().map(sel =>  {
+        let selectionText = this.cm.doc.getRange(sel.anchor, sel.head);
+        let { type: emphType, level: emphLevel, text: innerText } = this.getEmphasis(selectionText);
         if((emphLevel >> (level - 1)) % 2 === 1) emphLevel -= level;
         else emphLevel += level;
         return this.setEmphasis({ text: innerText, level: emphLevel, type: emphType });
@@ -88,6 +99,24 @@ class Editor {
       });
       this.cm.doc.setSelections(newSelections);
       this.cm.focus();
+    }
+    else if(type === "blockquote") {
+      let lines = new Set();
+      this.cm.doc.listSelections().forEach(sel => {
+        let min = Math.min(sel.anchor.line, sel.head.line), max = Math.max(sel.anchor.line, sel.head.line);
+        for(let i = min; i <= max; i++) {
+          lines.add(i);
+        }
+      });
+
+      lines.forEach(line => {
+        let { level: quoteLevel, text: quoteText } = this.getBlockquote(this.cm.getLine(line));
+        this.cm.doc.replaceRange(this.setBlockquote({ level: Math.max(0, quoteLevel + level), text: quoteText }), { line, ch: 0 }, { line, ch: Infinity });
+      });
+
+      let firstLine = Array.from(lines).reduce((a, b) => Math.min(a, b));
+      let lastLine = Array.from(lines).reduce((a, b) => Math.max(a, b));
+      this.cm.doc.setSelection({ line: firstLine, ch: 0 }, { line: lastLine, ch: this.cm.doc.getLine(lastLine).length });
     }
   }
 
