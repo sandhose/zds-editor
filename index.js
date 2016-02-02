@@ -12,8 +12,7 @@ class Editor {
       },
       extraKeys: {},
       tabMode: "indent",
-      lineWrapping: true,
-      modeURL: "/mode/%N/%N.js"
+      lineWrapping: true
     };
 
     this.buildToolbar();
@@ -72,52 +71,116 @@ class Editor {
     return type.repeat(level) + text + type.repeat(level);
   }
 
+  orderPositions(positions) {
+    return positions.sort((a, b) => {
+      return a.line == b.line ? a.ch >= b.ch : a.line >= b.line
+    });
+  }
+
+  extractLines(selections, fullLine = false) {
+    if(!selections) selections = this.cm.doc.listSelections();
+
+    // Extracting lines from selections
+    let lines = fullLine ? new Set() : new Map();
+    selections.forEach(sel => {
+      let [start, end] = this.orderPositions([sel.anchor, sel.head]);
+      for(let i = start.line; i <= end.line; i++) {
+        if(fullLine) {
+          lines.add(i);
+        } else {
+          if(!lines.has(i)) lines.set(i, []);
+          lines.get(i).push([
+            i == start.line ? start.ch : 0,
+            i == end.line ? end.ch : this.cm.doc.getLine(i).length
+          ]);
+        }
+      }
+    });
+
+    // Building ranges
+    let ranges = [];
+    if(fullLine) {
+      ranges = Array.from(lines).map(l => {
+        return { anchor: { line: l, ch: 0 }, head: { line: l, ch: this.cm.doc.getLine(l).length } };
+      });
+    } else {
+      ranges = Array.from(lines).map(([line, lineRanges]) => {
+        return lineRanges.map(([start, end]) => {
+          return { anchor: { line, ch: start }, head: { line, ch: end } };
+        });
+      }).reduce((a, b) => a.concat(b));
+    }
+
+    return ranges;
+  }
+
+  mapRanges(mapFunc, ranges) {
+    let newSelections = ranges.map(({ anchor, head }) => {
+      let rangeText = this.cm.doc.getRange(anchor, head);
+
+      let result = mapFunc(rangeText, { anchor, head });
+      let resultText, resultSelection;
+
+      if(typeof result === "string") {
+        resultText = result;
+      } else {
+        resultText = result.text;
+      }
+
+      if(result.selection) {
+        resultSelection = result.selection;
+      } else {
+        resultSelection = [0, resultText.length];
+      }
+
+      this.cm.doc.replaceRange(resultText, anchor, head);
+      return {
+        anchor: { line: anchor.line, ch: anchor.ch + resultSelection[0] },
+        head: { line: anchor.line, ch: anchor.ch + resultSelection[1] }
+      };
+    });
+    this.cm.doc.setSelections(newSelections);
+  }
+
   handleAction({ type, level }) {
     if(type === "emphasis") {
-      let selections = this.cm.doc.listSelections().map(sel =>  {
-        let selectionText = this.cm.doc.getRange(sel.anchor, sel.head);
-        let { type: emphType, level: emphLevel, text: innerText } = this.getEmphasis(selectionText);
+      let ranges = this.extractLines(this.cm.doc.listSelections());
+      this.mapRanges(text => {
+        if(text === "") {
+          return { text: "*".repeat(level * 2), selection: [level, level] };
+        }
+
+        let { type: emphType, level: emphLevel, text: innerText } = this.getEmphasis(text);
         if((emphLevel >> (level - 1)) % 2 === 1) emphLevel -= level;
         else emphLevel += level;
         return this.setEmphasis({ text: innerText, level: emphLevel, type: emphType });
-      });
-      this.cm.doc.replaceSelections(selections, "around");
+      }, ranges);
     }
     else if(type === "heading") {
-      let selections = this.cm.doc.listSelections();
-      let newSelections = [];
-      selections.forEach(sel => {
-        let cursorLine = sel.anchor.line,
-            lineText = this.cm.doc.getLine(cursorLine),
-            { level: headingLevel, text: headingText } = this.getHeading(lineText);
+      let ranges = this.extractLines(this.cm.doc.listSelections(), true);
+      this.mapRanges(text => {
+        let { level: headingLevel, text: headingText } = this.getHeading(text);
         if(headingLevel === level) level = 0; // Toggle heading if same level
-        this.cm.doc.replaceRange(this.setHeading({ level, text: headingText }), { line: cursorLine, ch: 0 }, { line: cursorLine, ch: Infinity });
-        newSelections.push({
-          anchor: { line: cursorLine, ch: level !== 0 && level + 1 },
-          head: { line: cursorLine, ch: Infinity }
-        });
-      });
-      this.cm.doc.setSelections(newSelections);
-      this.cm.focus();
+        if(headingText === "") {
+          return { text: "#".repeat(level) + " ", selection: [level + 1, level + 1] };
+        }
+        return this.setHeading({ level, text: headingText });
+      }, ranges);
     }
     else if(type === "blockquote") {
-      let lines = new Set();
-      this.cm.doc.listSelections().forEach(sel => {
-        let min = Math.min(sel.anchor.line, sel.head.line), max = Math.max(sel.anchor.line, sel.head.line);
-        for(let i = min; i <= max; i++) {
-          lines.add(i);
+      let ranges = this.extractLines(this.cm.doc.listSelections(), true);
+      this.mapRanges(text => {
+        let { level: quoteLevel, text: quoteText } = this.getBlockquote(text);
+        quoteLevel = Math.max(0, quoteLevel + level);
+        if(quoteText === "") {
+          return { text: "> ".repeat(quoteLevel), selection: [quoteLevel * 2, quoteLevel * 2] };
         }
-      });
 
-      lines.forEach(line => {
-        let { level: quoteLevel, text: quoteText } = this.getBlockquote(this.cm.getLine(line));
-        this.cm.doc.replaceRange(this.setBlockquote({ level: Math.max(0, quoteLevel + level), text: quoteText }), { line, ch: 0 }, { line, ch: Infinity });
-      });
-
-      let firstLine = Array.from(lines).reduce((a, b) => Math.min(a, b));
-      let lastLine = Array.from(lines).reduce((a, b) => Math.max(a, b));
-      this.cm.doc.setSelection({ line: firstLine, ch: 0 }, { line: lastLine, ch: this.cm.doc.getLine(lastLine).length });
+        return this.setBlockquote({ level: quoteLevel, text: quoteText });
+      }, ranges);
     }
+
+    this.cm.focus();
   }
 
   addToolbarButton({ name, type, level, keymaps }) {
