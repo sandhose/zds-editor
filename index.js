@@ -43,6 +43,7 @@ class Editor {
     this.addToolbarButton({ name: "h6", type: "heading", level: 6 });
     this.addToolbarButton({ name: "+quote", type: "blockquote", level: 1, keymaps: ["Cmd-'", "Ctrl-'"] });
     this.addToolbarButton({ name: "-quote", type: "blockquote", level: -1, keymaps: ["Cmd-Alt-'", "Ctrl-Alt-'"] });
+    this.addToolbarButton({ name: "code", type: "code" });
   }
 
   /**
@@ -225,6 +226,21 @@ class Editor {
   }
 
   /**
+   * Expands the selection to the whole line
+   * @param {Range[]} [selections=this.cm.doc.listSelections()] - The ranges to expand
+   * @return {Range[]} The expanded selections
+   */
+  expandSelectionsToLines(selections) {
+    if(!selections) selections = this.cm.doc.listSelections();
+    return selections.map(sel => {
+      let [start, end] = this.orderPositions([sel.anchor, sel.head]);
+      start.ch = 0;
+      end.ch = this.cm.doc.getLine(end.line).length;
+      return { anchor: start, head: end };
+    });
+  }
+
+  /**
    * @callback rangeMap
    * @param {string} text - The input text
    * @param {Range} range - The range of the text
@@ -257,9 +273,17 @@ class Editor {
       }
 
       this.cm.doc.replaceRange(resultText, anchor, head);
+      let s1 = resultText.slice(0, resultSelection[0]).split("\n");
+      let s2 = resultText.slice(0, -resultSelection[1]).split("\n");
       return {
-        anchor: { line: anchor.line, ch: anchor.ch + resultSelection[0] },
-        head: { line: anchor.line, ch: anchor.ch + resultSelection[1] }
+        anchor: {
+          line: anchor.line - 1 + s1.length,
+          ch: (s1.length > 1 ? anchor.ch : 0) + s1[s1.length - 1].length
+        },
+        head: {
+          line: anchor.line - 1 + s2.length,
+          ch: (s2.length > 1 ? anchor.ch : 0) + s2[s2.length - 1].length
+        }
       };
     });
     this.cm.doc.setSelections(newSelections);
@@ -293,7 +317,7 @@ class Editor {
         let { level: headingLevel, text: headingText } = this.getHeading(text);
         if(headingLevel === level) level = 0; // Toggle heading if same level
         if(headingText === "") {
-          return { text: "#".repeat(level) + " ", selection: [level + 1, level + 1] };
+          return { text: "#".repeat(level) + " ", selection: [level + 1, 0] };
         }
         return this.setHeading({ level, text: headingText });
       }, ranges);
@@ -304,10 +328,26 @@ class Editor {
         let { level: quoteLevel, text: quoteText } = this.getBlockquote(text);
         quoteLevel = Math.max(0, quoteLevel + level);
         if(quoteText === "") {
-          return { text: "> ".repeat(quoteLevel), selection: [quoteLevel * 2, quoteLevel * 2] };
+          return { text: "> ".repeat(quoteLevel), selection: [quoteLevel * 2, 0] };
         }
 
         return this.setBlockquote({ level: quoteLevel, text: quoteText });
+      }, ranges);
+    }
+    else if(type === "code") {
+      let ranges = this.expandSelectionsToLines();
+      this.mapRanges(text => {
+        if(text.trim() === "") {
+          return {
+            text: "```\n\n```",
+            selection: [4, 4]
+          }
+        } else {
+          return {
+            text: "```language\n" + text + "\n```",
+            selection: [3, text.length + 5]
+          }
+        }
       }, ranges);
     }
 
