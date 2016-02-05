@@ -44,6 +44,7 @@ class Editor {
     this.addToolbarButton({ name: "+quote", type: "blockquote", level: 1, keymaps: ["Cmd-'", "Ctrl-'"] });
     this.addToolbarButton({ name: "-quote", type: "blockquote", level: -1, keymaps: ["Cmd-Alt-'", "Ctrl-Alt-'"] });
     this.addToolbarButton({ name: "code", type: "code" });
+    this.addToolbarButton({ name: "link", type: "link", keymaps: ["Cmd-K", "Ctrl-K"] });
   }
 
   /**
@@ -373,6 +374,24 @@ class Editor {
             selection: [3, text.length + 5]
           }
         }
+      }, ranges);
+    }
+    else if(type === "link") {
+      let urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      let ranges = this.extractLines(this.cm.doc.listSelections());
+      this.mapRanges(text => {
+        if(text === "" || text.match(urlRegex)) {
+          return {
+            text: `[](${text})`,
+            selection: [1, 3 + text.length]
+          };
+        }
+        else {
+          return {
+            text: `[${text}]()`,
+            selection: [text.length + 3, 1]
+          }
+        };
       }, ranges);
     }
 
