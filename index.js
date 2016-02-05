@@ -254,7 +254,7 @@ class Editor {
    * @see Editor#extractLines
    */
   mapRanges(mapFunc, ranges) {
-    let newSelections = ranges.map(({ anchor, head }) => {
+    let newSelections = ranges.map(({ anchor, head }, index) => {
       let rangeText = this.cm.doc.getRange(anchor, head);
 
       let result = mapFunc(rangeText, { anchor, head });
@@ -269,24 +269,48 @@ class Editor {
       if(result.selection) {
         resultSelection = result.selection;
       } else {
-        resultSelection = [0, resultText.length];
+        resultSelection = [0, 0];
       }
+
+      ranges.slice(index + 1).forEach(range => {
+        let from = this.adjustPosForChange(range.anchor, { from: anchor, to: head, text: resultText.split("\n") }),
+            to = this.adjustPosForChange(range.head, { from: anchor, to: head, text: resultText.split("\n") });
+        range.anchor = from;
+        range.head = to;
+      });
 
       this.cm.doc.replaceRange(resultText, anchor, head);
       let s1 = resultText.slice(0, resultSelection[0]).split("\n");
-      let s2 = resultText.slice(0, -resultSelection[1]).split("\n");
+      let s2 = resultText.slice(0, resultText.length - resultSelection[1]).split("\n");
       return {
         anchor: {
           line: anchor.line - 1 + s1.length,
-          ch: (s1.length > 1 ? anchor.ch : 0) + s1[s1.length - 1].length
+          ch: (s1.length > 1 ? 0 : anchor.ch) + s1[s1.length - 1].length
         },
         head: {
           line: anchor.line - 1 + s2.length,
-          ch: (s2.length > 1 ? anchor.ch : 0) + s2[s2.length - 1].length
+          ch: (s2.length > 1 ? 0 : anchor.ch) + s2[s2.length - 1].length
         }
       };
     });
     this.cm.doc.setSelections(newSelections);
+  }
+
+  /**
+   * Offset a Pos after a change
+   * @param {Pos} pos - Position to adjsut
+   * @param {object} change - Change to be done
+   * @param {Pos} change.from - Start of the change
+   * @param {Pos} change.to - End of the change
+   * @param {string} change.text - New text for the change
+   */
+  adjustPosForChange(pos, { from, to, text }) {
+    if(codemirror.cmpPos(pos, from) < 0) return pos;
+    if(codemirror.cmpPos(pos, to) <= 0) return codemirror.changeEnd({ from, to, text });
+
+    let line = pos.line + text.length - (to.line - from.line) - 1, ch = pos.ch;
+    if (pos.line == to.line) ch += codemirror.changeEnd({ from, to, text }).ch - to.ch;
+    return { line, ch };
   }
 
   /**
@@ -301,13 +325,14 @@ class Editor {
     if(type === "emphasis") {
       let ranges = this.extractLines(this.cm.doc.listSelections());
       this.mapRanges(text => {
-        if(text === "") {
-          return { text: "*".repeat(level * 2), selection: [level, level] };
-        }
-
         let { type: emphType, level: emphLevel, text: innerText } = this.getEmphasis(text);
         if((emphLevel >> (level - 1)) % 2 === 1) emphLevel -= level;
         else emphLevel += level;
+
+        if(innerText === "") {
+          return { text: "*".repeat(emphLevel * 2), selection: [emphLevel, emphLevel] };
+        }
+
         return this.setEmphasis({ text: innerText, level: emphLevel, type: emphType });
       }, ranges);
     }
@@ -384,4 +409,4 @@ class Editor {
 
 module.exports = Editor;
 
-new Editor(document.getElementById("editor"));
+window.ed = new Editor(document.getElementById("editor"));
