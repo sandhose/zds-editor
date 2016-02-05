@@ -366,10 +366,16 @@ class Editor {
         else emphLevel += level;
 
         if(innerText === "") {
-          return { text: "*".repeat(emphLevel * 2), selection: [emphLevel, emphLevel] };
+          return {
+            text: prefix + "*".repeat(emphLevel * 2),
+            selection: [prefix.length + emphLevel, emphLevel]
+          };
         }
 
-        return prefix + this.setEmphasis({ text: innerText, level: emphLevel, type: emphType });
+        return {
+          text: prefix + this.setEmphasis({ text: innerText, level: emphLevel, type: emphType }),
+          selection: [prefix.length, 0]
+        };
       }, ranges);
     }
     else if(type === "heading") {
@@ -380,7 +386,10 @@ class Editor {
         let { level: headingLevel, text: headingText } = this.getHeading(text);
         if(headingLevel === level) level = 0; // Toggle heading if same level
         if(headingText === "") {
-          return { text: "#".repeat(level) + " ", selection: [level + 1, 0] };
+          return {
+            text: prefix + "#".repeat(level) + " ",
+            selection: [prefix.length + level + 1, 0]
+          };
         }
         return {
           text: prefix + this.setHeading({ level, text: headingText }),
