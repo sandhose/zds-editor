@@ -315,6 +315,39 @@ class Editor {
   }
 
   /**
+   * @typedef Prefix
+   * @type Object
+   * @property {string} prefix - The prefix of the text
+   * @property {string} text - The text itself
+   */
+
+  /**
+   * Get the prefix and text for given text and level
+   * @param {string} text - Text to parse
+   * @param {string} level - Level of the block to extract ; can be `cite` or `heading`
+   * @return {Prefix}
+   */
+  getPrefixForText(text, level) {
+    let prefix = "";
+
+    if(level === "cite" || level === "heading") {
+      let quote = this.getBlockquote(text);
+      text = quote.text;
+      quote.text = "";
+      prefix += this.setBlockquote(quote);
+    }
+
+    if(level === "heading") {
+      let heading = this.getHeading(text);
+      text = heading.text;
+      heading.text = "";
+      prefix += this.setHeading(heading);
+    }
+
+    return { text, prefix };
+  }
+
+  /**
    * Execute a given action
    * @param {object} action
    * @param {string} action.type
@@ -326,6 +359,8 @@ class Editor {
     if(type === "emphasis") {
       let ranges = this.extractLines(this.cm.doc.listSelections());
       this.mapRanges(text => {
+        let { prefix, text: tempText } = this.getPrefixForText(text, "heading");
+        text = tempText;
         let { type: emphType, level: emphLevel, text: innerText } = this.getEmphasis(text);
         if((emphLevel >> (level - 1)) % 2 === 1) emphLevel -= level;
         else emphLevel += level;
@@ -334,18 +369,23 @@ class Editor {
           return { text: "*".repeat(emphLevel * 2), selection: [emphLevel, emphLevel] };
         }
 
-        return this.setEmphasis({ text: innerText, level: emphLevel, type: emphType });
+        return prefix + this.setEmphasis({ text: innerText, level: emphLevel, type: emphType });
       }, ranges);
     }
     else if(type === "heading") {
       let ranges = this.extractLines(this.cm.doc.listSelections(), true);
       this.mapRanges(text => {
+        let { prefix, text: tempText } = this.getPrefixForText(text, "cite");
+        text = tempText;
         let { level: headingLevel, text: headingText } = this.getHeading(text);
         if(headingLevel === level) level = 0; // Toggle heading if same level
         if(headingText === "") {
           return { text: "#".repeat(level) + " ", selection: [level + 1, 0] };
         }
-        return this.setHeading({ level, text: headingText });
+        return {
+          text: prefix + this.setHeading({ level, text: headingText }),
+          selection: [prefix.length, 0]
+        };
       }, ranges);
     }
     else if(type === "blockquote") {
