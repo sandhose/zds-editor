@@ -7,7 +7,7 @@
     "watch": "watchify -t babelify index.js --standalone Editor -o 'exorcist -b dist/ dist/bundle.js.map > dist/bundle.js' -d",
     "build": "browserify -t babelify index.js --standalone Editor --debug | exorcist -b dist/ dist/bundle.js.map > dist/bundle.js",
     "doc": "jsdoc -R ./README.md -P ./package.json -d ./doc/ . ./lib/*.js",
-    "lint": "eslint index.js"
+    "lint": "eslint index.js lib/*.js"
   },
   "keywords": [
     "markdown",
