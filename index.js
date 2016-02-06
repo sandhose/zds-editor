@@ -476,4 +476,4 @@ module.exports = class Editor {
       });
     }
   }
-}
+};
