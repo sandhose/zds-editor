@@ -1,29 +1,29 @@
-require("codemirror/mode/gfm/gfm");
-require("codemirror/addon/mode/loadmode");
-let codemirror = require("codemirror");
+require('codemirror/mode/gfm/gfm');
+require('codemirror/addon/mode/loadmode');
+const codemirror = require('codemirror');
 
 class Editor {
   /**
    * @constructor
    * @param {DOMNode} textarea
    */
-  constructor(textarea, options) {
-    if(!textarea) throw new Error("No textarea provided");
+  constructor(textarea) {
+    if (!textarea) throw new Error('No textarea provided');
     this.options = {
       mode: {
-        name: "gfm",
-        gitHubSpice: false
+        name: 'gfm',
+        gitHubSpice: false,
       },
       extraKeys: {},
-      tabMode: "indent",
-      lineWrapping: true
+      tabMode: 'indent',
+      lineWrapping: true,
     };
 
     this.buildToolbar();
     this.cm = codemirror.fromTextArea(textarea, this.options);
 
     // Append the toolbar
-    let wrapper = this.cm.getWrapperElement();
+    const wrapper = this.cm.getWrapperElement();
     wrapper.parentNode.insertBefore(this.toolbar, wrapper);
   }
 
@@ -31,20 +31,24 @@ class Editor {
    * Build the toolbar
    */
   buildToolbar() {
-    this.toolbar = document.createElement("div");
+    this.toolbar = document.createElement('div');
 
-    this.addToolbarButton({ name: "bold", type: "emphasis", level: 2, keymaps: ["Cmd-B", "Ctrl-B"] });
-    this.addToolbarButton({ name: "italic", type: "emphasis", level: 1, keymaps: ["Cmd-I", "Ctrl-I"] });
-    this.addToolbarButton({ name: "h1", type: "heading", level: 1 });
-    this.addToolbarButton({ name: "h2", type: "heading", level: 2 });
-    this.addToolbarButton({ name: "h3", type: "heading", level: 3 });
-    this.addToolbarButton({ name: "h4", type: "heading", level: 4 });
-    this.addToolbarButton({ name: "h5", type: "heading", level: 5 });
-    this.addToolbarButton({ name: "h6", type: "heading", level: 6 });
-    this.addToolbarButton({ name: "+quote", type: "blockquote", level: 1, keymaps: ["Cmd-'", "Ctrl-'"] });
-    this.addToolbarButton({ name: "-quote", type: "blockquote", level: -1, keymaps: ["Cmd-Alt-'", "Ctrl-Alt-'"] });
-    this.addToolbarButton({ name: "code", type: "code" });
-    this.addToolbarButton({ name: "link", type: "link", keymaps: ["Cmd-K", "Ctrl-K"] });
+    this.addToolbarButton({ name: 'bold', type: 'emphasis', level: 2,
+                            keymaps: ['Cmd-B', 'Ctrl-B'] });
+    this.addToolbarButton({ name: 'italic', type: 'emphasis', level: 1,
+                            keymaps: ['Cmd-I', 'Ctrl-I'] });
+    this.addToolbarButton({ name: 'h1', type: 'heading', level: 1 });
+    this.addToolbarButton({ name: 'h2', type: 'heading', level: 2 });
+    this.addToolbarButton({ name: 'h3', type: 'heading', level: 3 });
+    this.addToolbarButton({ name: 'h4', type: 'heading', level: 4 });
+    this.addToolbarButton({ name: 'h5', type: 'heading', level: 5 });
+    this.addToolbarButton({ name: 'h6', type: 'heading', level: 6 });
+    this.addToolbarButton({ name: '+quote', type: 'blockquote', level: 1,
+                            keymaps: ["Cmd-'", "Ctrl-'"] });
+    this.addToolbarButton({ name: '-quote', type: 'blockquote', level: -1,
+                            keymaps: ["Cmd-Alt-'", "Ctrl-Alt-'"] });
+    this.addToolbarButton({ name: 'code', type: 'code' });
+    this.addToolbarButton({ name: 'link', type: 'link', keymaps: ['Cmd-K', 'Ctrl-K'] });
   }
 
   /**
@@ -63,7 +67,7 @@ class Editor {
    * { level: 2, text: "test" }
    */
   getHeading(text) {
-    let match = text.match(/^(#{0,6})(.*)$/);
+    const match = text.match(/^(#{0,6})(.*)$/);
     return { level: match[1].length, text: match[2].trim() };
   }
 
@@ -76,7 +80,7 @@ class Editor {
    * "### Lorem ipsum"
    */
   setHeading({ level, text }) {
-    return ("#".repeat(level) + " " + text).replace(/^ /, "");
+    return (`${'#'.repeat(level)} ${text}`).replace(/^ /, '');
   }
 
   /**
@@ -95,7 +99,7 @@ class Editor {
    * { level: 3, text: "nested" }
    */
   getBlockquote(text) {
-    let match = text.match(/^((> )*)(.*)$/);
+    const match = text.match(/^((> )*)(.*)$/);
     return { level: match[1].length / 2, text: match[3] };
   }
 
@@ -108,7 +112,7 @@ class Editor {
    * "> quote"
    */
   setBlockquote({ level, text }) {
-    return "> ".repeat(level) + text;
+    return `${'> '.repeat(level)}${text}`;
   }
 
   /**
@@ -128,12 +132,12 @@ class Editor {
    * { level: 2, text: "bold", type: "_" }
    */
   getEmphasis(text) {
-    let start = text.charAt(0), match;
-    if(start !== "*" && start !== "_") return { type: "*", level: 0, text };
-    for(let i = 3; i > 0; i--) {
-      match = text.match(new RegExp(`^\\${start}{${i}}(.*)\\${start}{${i}}`));
-      if(match) {
-        return { type: start, level: i, text: match[1] };
+    const start = text.charAt(0);
+    if (start !== '*' && start !== '_') return { type: '*', level: 0, text };
+    for (let i = 3; i > 0; i--) {
+      const match = text.match(new RegExp(`^\\${start}{${i}}(.*)\\${start}{${i}}`));
+      if (match) {
+        return { type: start, level: i, text: match[1] };
       }
     }
   }
@@ -155,13 +159,14 @@ class Editor {
    * @param {Pos[]} positions
    * @return {Pos[]}
    * @example
-   * editor.orderPosition([{ line: 4, ch: 7 }, { line: 4, ch: 5 }, { line: 8, ch: 42 }, { line: 2, ch: 9 }]);
+   * editor.orderPosition([{ line: 4, ch: 7 }, { line: 4, ch: 5 },
+   *                       { line: 8, ch: 42 }, { line: 2, ch: 9 }]);
    * [{ line: 2, ch: 9 }, { line: 4, ch: 5 }, { line: 4, ch: 7 }, { line: 8, ch: 42 }]
    */
   orderPositions(positions) {
-    return positions.sort((a, b) => {
-      return a.line == b.line ? a.ch >= b.ch : a.line >= b.line
-    });
+    return positions.sort((a, b) =>
+      a.line === b.line ? a.ch >= b.ch : a.line >= b.line
+    );
   }
 
   /**
@@ -189,21 +194,19 @@ class Editor {
    * let ranges = editor.extractLines();
    * editor.mapRanges(text => `~${text}~`, ranges);
    */
-  extractLines(selections, fullLine = false) {
-    if(!selections) selections = this.cm.doc.listSelections();
-
+  extractLines(selections = this.cm.doc.listSelections(), fullLine = false) {
     // Extracting lines from selections
-    let lines = fullLine ? new Set() : new Map();
+    const lines = fullLine ? new Set() : new Map();
     selections.forEach(sel => {
-      let [start, end] = this.orderPositions([sel.anchor, sel.head]);
-      for(let i = start.line; i <= end.line; i++) {
-        if(fullLine) {
+      const [start, end] = this.orderPositions([sel.anchor, sel.head]);
+      for (let i = start.line; i <= end.line; i++) {
+        if (fullLine) {
           lines.add(i);
         } else {
-          if(!lines.has(i)) lines.set(i, []);
+          if (!lines.has(i)) lines.set(i, []);
           lines.get(i).push([
-            i == start.line ? start.ch : 0,
-            i == end.line ? end.ch : this.cm.doc.getLine(i).length
+            i === start.line ? start.ch : 0,
+            i === end.line ? end.ch : this.cm.doc.getLine(i).length,
           ]);
         }
       }
@@ -211,16 +214,16 @@ class Editor {
 
     // Building ranges
     let ranges = [];
-    if(fullLine) {
-      ranges = Array.from(lines).map(l => {
-        return { anchor: { line: l, ch: 0 }, head: { line: l, ch: this.cm.doc.getLine(l).length } };
-      });
+    if (fullLine) {
+      ranges = Array.from(lines).map(l =>
+        ({ anchor: { line: l, ch: 0 }, head: { line: l, ch: this.cm.doc.getLine(l).length } })
+      );
     } else {
-      ranges = Array.from(lines).map(([line, lineRanges]) => {
-        return lineRanges.map(([start, end]) => {
-          return { anchor: { line, ch: start }, head: { line, ch: end } };
-        });
-      }).reduce((a, b) => a.concat(b));
+      ranges = Array.from(lines).map(([line, lineRanges]) =>
+        lineRanges.map(([start, end]) =>
+          ({ anchor: { line, ch: start }, head: { line, ch: end } })
+        )
+      ).reduce((a, b) => a.concat(b));
     }
 
     return ranges;
@@ -231,10 +234,9 @@ class Editor {
    * @param {Range[]} [selections=this.cm.doc.listSelections()] - The ranges to expand
    * @return {Range[]} The expanded selections
    */
-  expandSelectionsToLines(selections) {
-    if(!selections) selections = this.cm.doc.listSelections();
+  expandSelectionsToLines(selections = this.cm.doc.listSelections()) {
     return selections.map(sel => {
-      let [start, end] = this.orderPositions([sel.anchor, sel.head]);
+      const [start, end] = this.orderPositions([sel.anchor, sel.head]);
       start.ch = 0;
       end.ch = this.cm.doc.getLine(end.line).length;
       return { anchor: start, head: end };
@@ -254,44 +256,42 @@ class Editor {
    * @param {Range[]} ranges
    * @see Editor#extractLines
    */
-  mapRanges(mapFunc, ranges) {
-    let newSelections = ranges.map(({ anchor, head }, index) => {
-      let rangeText = this.cm.doc.getRange(anchor, head);
+  mapRanges(mapFunc, _ranges) {
+    const ranges = _ranges;
+    const newSelections = ranges.map(({ anchor, head }, index) => {
+      const rangeText = this.cm.doc.getRange(anchor, head);
 
-      let result = mapFunc(rangeText, { anchor, head });
-      let resultText, resultSelection;
+      const result = mapFunc(rangeText, { anchor, head });
+      let resultText;
+      const resultSelection = result.selection || [0, 0];
 
-      if(typeof result === "string") {
+      if (typeof result === 'string') {
         resultText = result;
       } else {
         resultText = result.text;
       }
 
-      if(result.selection) {
-        resultSelection = result.selection;
-      } else {
-        resultSelection = [0, 0];
-      }
-
-      ranges.slice(index + 1).forEach(range => {
-        let from = this.adjustPosForChange(range.anchor, { from: anchor, to: head, text: resultText.split("\n") }),
-            to = this.adjustPosForChange(range.head, { from: anchor, to: head, text: resultText.split("\n") });
-        range.anchor = from;
-        range.head = to;
+      ranges.slice(index + 1).forEach((range, i) => {
+        ranges[index + 1 + i] = {
+          anchor: this.adjustPosForChange(range.anchor, { from: anchor, to: head,
+                                                          text: resultText.split('\n') }),
+          head: this.adjustPosForChange(range.head, { from: anchor, to: head,
+                                                      text: resultText.split('\n') }),
+        };
       });
 
       this.cm.doc.replaceRange(resultText, anchor, head);
-      let s1 = resultText.slice(0, resultSelection[0]).split("\n");
-      let s2 = resultText.slice(0, resultText.length - resultSelection[1]).split("\n");
+      const s1 = resultText.slice(0, resultSelection[0]).split('\n');
+      const s2 = resultText.slice(0, resultText.length - resultSelection[1]).split('\n');
       return {
         anchor: {
           line: anchor.line - 1 + s1.length,
-          ch: (s1.length > 1 ? 0 : anchor.ch) + s1[s1.length - 1].length
+          ch: (s1.length > 1 ? 0 : anchor.ch) + s1[s1.length - 1].length,
         },
         head: {
           line: anchor.line - 1 + s2.length,
-          ch: (s2.length > 1 ? 0 : anchor.ch) + s2[s2.length - 1].length
-        }
+          ch: (s2.length > 1 ? 0 : anchor.ch) + s2[s2.length - 1].length,
+        },
       };
     });
     this.cm.doc.setSelections(newSelections);
@@ -306,12 +306,15 @@ class Editor {
    * @param {string} change.text - New text for the change
    */
   adjustPosForChange(pos, { from, to, text }) {
-    if(codemirror.cmpPos(pos, from) < 0) return pos;
-    if(codemirror.cmpPos(pos, to) <= 0) return codemirror.changeEnd({ from, to, text });
+    if (codemirror.cmpPos(pos, from) < 0) return pos;
+    if (codemirror.cmpPos(pos, to) <= 0) return codemirror.changeEnd({ from, to, text });
 
-    let line = pos.line + text.length - (to.line - from.line) - 1, ch = pos.ch;
-    if (pos.line == to.line) ch += codemirror.changeEnd({ from, to, text }).ch - to.ch;
-    return { line, ch };
+    let ch = pos.ch;
+    if (pos.line === to.line) ch += codemirror.changeEnd({ from, to, text }).ch - to.ch;
+    return {
+      line: pos.line + text.length - (to.line - from.line) - 1,
+      ch,
+    };
   }
 
   /**
@@ -327,20 +330,21 @@ class Editor {
    * @param {string} level - Level of the block to extract ; can be `cite` or `heading`
    * @return {Prefix}
    */
-  getPrefixForText(text, level) {
-    let prefix = "";
+  getPrefixForText(_text, level) {
+    let prefix = '';
+    let text = _text;
 
-    if(level === "cite" || level === "heading") {
-      let quote = this.getBlockquote(text);
+    if (level === 'cite' || level === 'heading') {
+      const quote = this.getBlockquote(text);
       text = quote.text;
-      quote.text = "";
+      quote.text = '';
       prefix += this.setBlockquote(quote);
     }
 
-    if(level === "heading") {
-      let heading = this.getHeading(text);
+    if (level === 'heading') {
+      const heading = this.getHeading(text);
       text = heading.text;
-      heading.text = "";
+      heading.text = '';
       prefix += this.setHeading(heading);
     }
 
@@ -356,91 +360,89 @@ class Editor {
    * editor.execute({ type: "heading", level: 5 });
    */
   handleAction({ type, level }) {
-    if(type === "emphasis") {
-      let ranges = this.extractLines(this.cm.doc.listSelections());
+    if (type === 'emphasis') {
+      const ranges = this.extractLines(this.cm.doc.listSelections());
       this.mapRanges(text => {
-        let { prefix, text: tempText } = this.getPrefixForText(text, "heading");
-        text = tempText;
-        let { type: emphType, level: emphLevel, text: innerText } = this.getEmphasis(text);
-        if((emphLevel >> (level - 1)) % 2 === 1) emphLevel -= level;
-        else emphLevel += level;
+        const { prefix, text: unprefixedText } = this.getPrefixForText(text, 'heading');
+        const emph = this.getEmphasis(unprefixedText);
+        if ((emph.level >> (level - 1)) % 2 === 1) emph.level -= level;
+        else emph.level += level;
 
-        if(innerText === "") {
+        if (emph.text === '') {
           return {
-            text: prefix + "*".repeat(emphLevel * 2),
-            selection: [prefix.length + emphLevel, emphLevel]
+            text: prefix + '*'.repeat(emph.level * 2),
+            selection: [prefix.length + emph.level, emph.level],
           };
         }
 
         return {
-          text: prefix + this.setEmphasis({ text: innerText, level: emphLevel, type: emphType }),
-          selection: [prefix.length, 0]
+          text: prefix + this.setEmphasis(emph),
+          selection: [prefix.length, 0],
         };
       }, ranges);
-    }
-    else if(type === "heading") {
-      let ranges = this.extractLines(this.cm.doc.listSelections(), true);
+    } else if (type === 'heading') {
+      const ranges = this.extractLines(this.cm.doc.listSelections(), true);
       this.mapRanges(text => {
-        let { prefix, text: tempText } = this.getPrefixForText(text, "cite");
-        text = tempText;
-        let { level: headingLevel, text: headingText } = this.getHeading(text);
-        if(headingLevel === level) level = 0; // Toggle heading if same level
-        if(headingText === "") {
+        const { prefix, text: unprefixedText } = this.getPrefixForText(text, 'cite');
+        const heading = this.getHeading(unprefixedText);
+        if (heading.level === level) heading.level = 0; // Toggle heading if same level
+        else heading.level = level;
+        if (heading.text === '') {
           return {
-            text: prefix + "#".repeat(level) + " ",
-            selection: [prefix.length + level + 1, 0]
+            text: `${prefix}${'#'.repeat(heading.level)} `,
+            selection: [prefix.length + heading.level + 1, 0],
           };
         }
         return {
-          text: prefix + this.setHeading({ level, text: headingText }),
-          selection: [prefix.length, 0]
+          text: prefix + this.setHeading(heading),
+          selection: [prefix.length, 0],
         };
       }, ranges);
-    }
-    else if(type === "blockquote") {
-      let ranges = this.extractLines(this.cm.doc.listSelections(), true);
+    } else if (type === 'blockquote') {
+      const ranges = this.extractLines(this.cm.doc.listSelections(), true);
       this.mapRanges(text => {
-        let { level: quoteLevel, text: quoteText } = this.getBlockquote(text);
-        quoteLevel = Math.max(0, quoteLevel + level);
-        if(quoteText === "") {
-          return { text: "> ".repeat(quoteLevel), selection: [quoteLevel * 2, 0] };
+        const quote = this.getBlockquote(text);
+        quote.level = Math.max(0, quote.level + level);
+        if (quote.text === '') {
+          return { text: '> '.repeat(quote.level), selection: [quote.level * 2, 0] };
         }
 
-        return this.setBlockquote({ level: quoteLevel, text: quoteText });
+        return this.setBlockquote(quote);
       }, ranges);
-    }
-    else if(type === "code") {
-      let ranges = this.expandSelectionsToLines();
+    } else if (type === 'code') {
+      const ranges = this.expandSelectionsToLines();
       this.mapRanges(text => {
-        if(text.trim() === "") {
-          return {
-            text: "```\n\n```",
-            selection: [4, 4]
-          }
+        let returnValue;
+        if (text.trim() === '') {
+          returnValue = {
+            text: '```\n\n```',
+            selection: [4, 4],
+          };
         } else {
-          return {
-            text: "```language\n" + text + "\n```",
-            selection: [3, text.length + 5]
-          }
-        }
-      }, ranges);
-    }
-    else if(type === "link") {
-      let urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
-      let ranges = this.extractLines(this.cm.doc.listSelections());
-      this.mapRanges(text => {
-        if(text === "" || text.match(urlRegex)) {
-          return {
-            text: `[](${text})`,
-            selection: [1, 3 + text.length]
+          returnValue = {
+            text: `\`\`\`language\n${text}\n\`\`\``,
+            selection: [3, text.length + 5],
           };
         }
-        else {
-          return {
+        return returnValue;
+      }, ranges);
+    } else if (type === 'link') {
+      const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      const ranges = this.extractLines(this.cm.doc.listSelections());
+      this.mapRanges(text => {
+        let returnValue;
+        if (text === '' || text.match(urlRegex)) {
+          returnValue = {
+            text: `[](${text})`,
+            selection: [1, 3 + text.length],
+          };
+        } else {
+          returnValue = {
             text: `[${text}]()`,
-            selection: [text.length + 3, 1]
-          }
-        };
+            selection: [text.length + 3, 1],
+          };
+        }
+        return returnValue;
       }, ranges);
     }
 
@@ -455,19 +457,20 @@ class Editor {
    * @param {} opts.level - Arbitrary level (will be passed to `handleAction`)
    * @param {string[]} opts.keymaps - An array of keymaps to bind to this action
    * @example
-   * editor.addToolbarButton({ name: "bold", type: "emphasis", level: 2, keymaps: ["Cmd-B", "Ctrl-B"]});
+   * editor.addToolbarButton({ name: "bold", type: "emphasis", level: 2,
+   *                           keymaps: ["Cmd-B", "Ctrl-B"]});
    */
   addToolbarButton({ name, type, level, keymaps }) {
-    if(name) {
-      let button = document.createElement("button");
+    if (name) {
+      const button = document.createElement('button');
       button.innerHTML = name;
-      button.addEventListener("click", e => this.handleAction({ type, level }));
+      button.addEventListener('click', () => this.handleAction({ type, level }));
       this.toolbar.appendChild(button);
     }
 
-    if(keymaps) {
+    if (keymaps) {
       keymaps.forEach(key => {
-        if(this.options.extraKeys[key]) throw new Error(key + " is already registered");
+        if (this.options.extraKeys[key]) throw new Error(`${key} is already registered`);
 
         this.options.extraKeys[key] = () => this.handleAction({ type, level });
       });
@@ -477,4 +480,4 @@ class Editor {
 
 module.exports = Editor;
 
-window.ed = new Editor(document.getElementById("editor"));
+window.ed = new Editor(document.getElementById('editor'));
