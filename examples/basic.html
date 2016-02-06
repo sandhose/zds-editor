@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>zds-editor basic example</title>
+  <link rel="stylesheet" href="../node_modules/codemirror/lib/codemirror.css" />
+</head>
+<body>
+  <textarea id="editor"></textarea>
+  <script src="../dist/bundle.js"></script>
+  <script>
+    window.editor = new Editor(document.getElementById("editor"));
+  </script>
+</body>
+</html>

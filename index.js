@@ -2,7 +2,7 @@ require('codemirror/mode/gfm/gfm');
 require('codemirror/addon/mode/loadmode');
 const codemirror = require('codemirror');
 
-class Editor {
+module.exports = class Editor {
   /**
    * @constructor
    * @param {DOMNode} textarea
@@ -477,7 +477,3 @@ class Editor {
     }
   }
 }
-
-module.exports = Editor;
-
-window.ed = new Editor(document.getElementById('editor'));
