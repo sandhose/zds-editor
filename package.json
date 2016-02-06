@@ -4,9 +4,9 @@
   "description": "Markdown editor used on Zeste de Savoir",
   "main": "index.js",
   "scripts": {
-    "watch": "watchify -t babelify index.js --standalone Editor -o 'exorcist dist/bundle.js.map > dist/bundle.js' -d",
-    "build": "browserify -t babelify index.js --standalone Editor --debug | exorcist dist/bundle.js.map > dist/bundle.js",
-    "doc": "jsdoc -R ./README.md -P ./package.json -d ./doc/ .",
+    "watch": "watchify -t babelify index.js --standalone Editor -o 'exorcist -b dist/ dist/bundle.js.map > dist/bundle.js' -d",
+    "build": "browserify -t babelify index.js --standalone Editor --debug | exorcist -b dist/ dist/bundle.js.map > dist/bundle.js",
+    "doc": "jsdoc -R ./README.md -P ./package.json -d ./doc/ . ./lib/*.js",
     "lint": "eslint index.js"
   },
   "keywords": [
