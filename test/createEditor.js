@@ -2,6 +2,7 @@
 
 import test from 'tape';
 import Editor from '../lib/Editor.js';
+import DummyAdapter from '../lib/DummyAdapter';
 
 /**
  * Create an editor instance
@@ -9,10 +10,7 @@ import Editor from '../lib/Editor.js';
  * @return {Editor}
  */
 const createEditor = options => {
-  const textarea = document.createElement('textarea');
-  const wrapper = document.createElement('wrapper');
-  wrapper.appendChild(textarea);
-  return new Editor(textarea, options);
+  return new Editor(new DummyAdapter(), options);
 };
 
 /**
@@ -20,14 +18,14 @@ const createEditor = options => {
  * @param {Editor} editor
  */
 const destroyEditor = editor => {
-  editor.cm.getWrapperElement().parentNode.remove();
+  editor.wrapper.remove();
 };
 
 export { createEditor, destroyEditor };
 
 test('Editor#constructor', assert => {
   assert.plan(2);
-  assert.throws(() => new Editor(), new Error('No textarea provided'),
-                'throws an exception if no textarea provided');
-  assert.doesNotThrow(createEditor, null, 'does not throw when a textarea is provided');
+  assert.throws(() => new Editor(), new Error('No adapter provided'),
+                'throws an exception if there is no adapter provided');
+  assert.doesNotThrow(createEditor, null, 'should not throw when an adapter is provided');
 });

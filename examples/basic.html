@@ -9,7 +9,9 @@
   <textarea id="editor"></textarea>
   <script src="../dist/bundle.js"></script>
   <script>
-    window.editor = new Editor(document.getElementById("editor"));
+    var CodeMirrorAdapter = Editor.CodeMirrorAdapter;
+    var DummyAdapter = Editor.DummyAdapter;
+    window.editor = new Editor(new DummyAdapter(document.getElementById('editor')));
   </script>
 </body>
 </html>
