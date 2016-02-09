@@ -9,9 +9,7 @@ import DummyAdapter from '../lib/DummyAdapter';
  * @param {object} options - Options to pass to the Editor constructor
  * @return {Editor}
  */
-const createEditor = options => {
-  return new Editor(new DummyAdapter(), options);
-};
+const createEditor = options => new Editor(new DummyAdapter(), options);
 
 /**
  * Destroy an editor instance
