@@ -2,14 +2,14 @@
 
 import test from 'tape';
 import Editor from '../lib/Editor.js';
-import DummyAdapter from '../lib/DummyAdapter';
+import GenericAdapter from '../lib/GenericAdapter';
 
 /**
  * Create an editor instance
  * @param {object} options - Options to pass to the Editor constructor
  * @return {Editor}
  */
-const createEditor = options => new Editor(new DummyAdapter(), options);
+const createEditor = options => new Editor(new GenericAdapter(), options);
 
 /**
  * Destroy an editor instance

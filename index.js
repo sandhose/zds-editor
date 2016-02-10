@@ -1,7 +1,7 @@
 import Editor from './lib/Editor';
 import CodeMirrorAdapter from './lib/CodeMirrorAdapter';
-import DummyAdapter from './lib/DummyAdapter';
+import GenericAdapter from './lib/GenericAdapter';
 
 module.exports = Editor;
 module.exports.CodeMirrorAdapter = CodeMirrorAdapter;
-module.exports.DummyAdapter = DummyAdapter;
+module.exports.GenericAdapter = GenericAdapter;
