@@ -4,8 +4,8 @@
   "description": "Markdown editor used on Zeste de Savoir",
   "main": "lib/index.js",
   "scripts": {
-    "watch": "watchify src/index.js -s Editor -o 'exorcist -b lib/ lib/bundle.js.map > lib/bundle.js' -d",
-    "build:bundle": "browserify src/index.js -s Editor -d | exorcist -b lib/ lib/bundle.js.map > lib/bundle.js",
+    "watch": "watchify src/index.js -t babelify -g uglifyify -s Editor -o 'exorcist -b lib/ lib/bundle.js.map > lib/bundle.js' -d",
+    "build:bundle": "browserify src/index.js -t babelify -g uglifyify -s Editor -d | exorcist -b lib/ lib/bundle.js.map > lib/bundle.js",
     "build:babel": "babel -d lib/ src/ --source-maps inline",
     "build": "npm run build:bundle && npm run build:babel",
     "doc": "jsdoc -R ./README.md -P ./package.json -d ./doc/ . ./src/*.js",
@@ -13,12 +13,6 @@
     "test": "browserify -t babelify ./test/*.js | tape-run | tap-dot",
     "clean": "rm lib/*",
     "prepublish": "npm run lint && npm run build:babel"
-  },
-  "browserify": {
-    "transform": [
-      "babelify",
-      "uglifyify"
-    ]
   },
   "keywords": [
     "markdown",
