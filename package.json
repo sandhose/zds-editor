@@ -2,13 +2,21 @@
   "name": "zds-editor",
   "version": "0.2.0",
   "description": "Markdown editor used on Zeste de Savoir",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
-    "watch": "watchify -t babelify index.js --standalone Editor -o 'exorcist -b dist/ dist/bundle.js.map > dist/bundle.js' -d",
-    "build": "browserify -t babelify index.js --standalone Editor --debug | exorcist -b dist/ dist/bundle.js.map > dist/bundle.js",
-    "doc": "jsdoc -R ./README.md -P ./package.json -d ./doc/ . ./lib/*.js",
-    "lint": "eslint index.js lib/*.js test/*.js",
+    "watch": "watchify src/index.js -s Editor -o 'exorcist -b lib/ lib/bundle.js.map > lib/bundle.js' -d",
+    "build:bundle": "browserify src/index.js -s Editor -d | exorcist -b lib/ lib/bundle.js.map > lib/bundle.js",
+    "build:babel": "babel -d lib/ src/ --source-maps inline",
+    "build": "npm run build:bundle && npm run build:babel",
+    "doc": "jsdoc -R ./README.md -P ./package.json -d ./doc/ . ./src/*.js",
+    "lint": "eslint index.js src/*.js test/*.js",
     "test": "browserify -t babelify ./test/*.js | tape-run | tap-dot"
+  },
+  "browserify": {
+    "transform": [
+      "babelify",
+      "uglifyify"
+    ]
   },
   "keywords": [
     "markdown",
@@ -16,11 +24,17 @@
     "codemirror"
   ],
   "author": "Sandhose <quentingliech@gmail.com>",
+  "bugs": "https://github.com/sandhose/zds-editor/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandhose/zds-editor.git"
+  },
   "license": "MIT",
   "dependencies": {
     "codemirror": "^5.11.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.5.1",
     "babel-preset-es2015": "^6.3.13",
     "babelify": "^7.2.0",
     "browserify": "^13.0.0",
