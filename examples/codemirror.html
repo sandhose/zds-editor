@@ -2,19 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>zds-editor basic example</title>
+  <title>zds-editor codemirror example</title>
+  <link rel="stylesheet" href="../node_modules/codemirror/lib/codemirror.css" />
   <style>
-    #editor {
-      font-family: monospace;
-      font-size: 14px;
+    .CodeMirror {
       height: 300px;
       width: 500px;
-      resize: none;
       border: solid 1px #ccc;
-    }
-
-    #editor:focus {
-      outline: none;
     }
   </style>
 </head>
@@ -22,8 +16,8 @@
   <textarea id="editor"></textarea>
   <script src="../dist/bundle.js"></script>
   <script>
-    var TextareaAdapter = Editor.TextareaAdapter;
-    var adapter = new TextareaAdapter(document.getElementById('editor'));
+    var CodeMirrorAdapter = Editor.CodeMirrorAdapter;
+    var adapter = new CodeMirrorAdapter(document.getElementById('editor'));
     var editor = new Editor(adapter);
   </script>
 </body>
