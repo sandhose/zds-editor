@@ -1,4 +1,5 @@
 import { Pos, Range } from './util';
+import keycode from 'keycode';
 
 /**
  * Adapter to use a standard textarea element
@@ -15,9 +16,40 @@ class TextareaAdapter {
 
     /** @type {HTMLTextAreaElement} */
     this.textarea = textarea;
+
+    this.textarea.addEventListener('keydown', e => this.handleKeydown(e));
   }
 
-  setOptions() {}
+  setOptions(options) {
+    if (options.keymaps) {
+      this.keymaps = options.keymaps;
+    }
+  }
+
+  /**
+   * Handle a keydown event
+   * @param {KeyboardEvent} event
+   */
+  handleKeydown(event) {
+    let keyStr = '';
+    const modifiers = [
+      { name: 'Cmd', key: 'metaKey' },
+      { name: 'Ctrl', key: 'ctrlKey' },
+      { name: 'Shift', key: 'shiftKey' },
+      { name: 'Alt', key: 'altKey' },
+    ];
+
+    for (const { name, key } of modifiers) {
+      if (event[key]) keyStr += `${name}-`;
+    }
+
+    keyStr += keycode(event).toUpperCase();
+
+    if (this.keymaps[keyStr]) {
+      event.preventDefault();
+      this.keymaps[keyStr](event);
+    }
+  }
 
   /**
    * Get the text inside the textarea

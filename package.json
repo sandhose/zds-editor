@@ -44,6 +44,7 @@
     "eslint-config-airbnb": "^5.0.0",
     "exorcist": "^0.4.0",
     "jsdoc": "^3.4.0",
+    "keycode": "^2.1.0",
     "tap-dot": "^1.0.1",
     "tape": "^4.4.0",
     "tape-run": "^2.1.3",
