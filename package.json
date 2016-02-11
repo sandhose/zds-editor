@@ -10,7 +10,9 @@
     "build": "npm run build:bundle && npm run build:babel",
     "doc": "jsdoc -R ./README.md -P ./package.json -d ./doc/ . ./src/*.js",
     "lint": "eslint index.js src/*.js test/*.js",
-    "test": "browserify -t babelify ./test/*.js | tape-run | tap-dot"
+    "test": "browserify -t babelify ./test/*.js | tape-run | tap-dot",
+    "clean": "rm lib/*",
+    "prepublish": "npm run lint && npm run build:babel"
   },
   "browserify": {
     "transform": [
