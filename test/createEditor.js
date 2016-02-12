@@ -1,8 +1,8 @@
 'use strict';
 
 import test from 'tape';
-import Editor from '../lib/Editor.js';
-import GenericAdapter from '../lib/GenericAdapter';
+import Editor from '../src/Editor.js';
+import GenericAdapter from '../src/GenericAdapter';
 
 /**
  * Create an editor instance

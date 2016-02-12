@@ -9,6 +9,8 @@ class Pos {
    * @param {number} pos.ch
    */
   constructor({ line, ch }) {
+    if (typeof line !== 'number') throw new TypeError('line is not a number');
+    if (typeof ch !== 'number') throw new TypeError('ch is not a number');
     /** @type {number} */
     this.line = line;
     /** @type {number} */
