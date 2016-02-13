@@ -1,6 +1,6 @@
 {
   "name": "zds-editor",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Markdown editor used on Zeste de Savoir",
   "main": "lib/index.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "lint": "eslint index.js src/*.js test/*.js",
     "test": "browserify -t babelify ./test/*.js | tape-run | tap-dot",
     "clean": "rm lib/*",
-    "prepublish": "npm run lint && npm run build:babel"
+    "prepublish": "npm run lint && npm run build"
   },
   "keywords": [
     "markdown",
