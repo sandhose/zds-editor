@@ -22,16 +22,12 @@ class Editor {
       keymaps: {},
     }, options);
 
-    this.buildToolbar();
-    /** @type {DOMNode} */
-    this.wrapper = document.createElement('div');
+    /** @type {Map.<string, object>} */
+    this.keymaps = new Map();
+    /** @type {Map.<string, object>} */
+    this.toolbar = new Map();
 
-    const adapterWrapper = adapter.getWrapperElement();
-    if (adapterWrapper.parentNode) {
-      adapterWrapper.parentNode.insertBefore(this.wrapper, adapterWrapper);
-    }
-    this.wrapper.appendChild(this.toolbar);
-    this.wrapper.appendChild(adapterWrapper);
+    this.buildToolbar();
 
     this.setAdapter(adapter);
   }
@@ -47,17 +43,17 @@ class Editor {
 
     /** @type {GenericAdapter} */
     this.adapter = adapter;
-    this.adapter.setOptions(this.options);
+    this.adapter.setKeymaps(this.keymaps);
+    this.adapter.setToolbar(this.toolbar);
     this.adapter.on('paste', e => this.handlePaste(e));
     this.adapter.on('drop', e => this.handleDrop(e));
+    this.adapter.on('action', e => this.handleAction(e));
   }
 
   /**
    * Build the toolbar
    */
   buildToolbar() {
-    this.toolbar = document.createElement('div');
-
     this.addToolbarButton({ name: 'bold', type: 'emphasis', level: 2,
                             keymaps: ['Cmd-B', 'Ctrl-B'] });
     this.addToolbarButton({ name: 'italic', type: 'emphasis', level: 1,
@@ -555,17 +551,13 @@ class Editor {
    */
   addToolbarButton({ name, type, level, keymaps }) {
     if (name) {
-      const button = document.createElement('button');
-      button.innerHTML = name;
-      button.addEventListener('click', () => this.handleAction({ type, level }));
-      this.toolbar.appendChild(button);
+      this.toolbar.set(name, { type, level });
     }
 
     if (keymaps) {
       keymaps.forEach(key => {
-        if (this.options.keymaps[key]) throw new Error(`${key} is already registered`);
-
-        this.options.keymaps[key] = () => this.handleAction({ type, level });
+        if (this.keymaps.has(key)) throw new Error(`${key} is already registered`);
+        this.keymaps.set(key, { type, level });
       });
     }
   }

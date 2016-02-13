@@ -16,7 +16,7 @@ const createEditor = options => new Editor(new GenericAdapter(), options);
  * @param {Editor} editor
  */
 const destroyEditor = editor => {
-  editor.wrapper.remove();
+  editor.adapter.destroy();
 };
 
 module.exports = { createEditor, destroyEditor };

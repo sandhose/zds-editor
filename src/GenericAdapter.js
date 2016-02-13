@@ -9,11 +9,18 @@ class GenericAdapter {
   constructor() {}
 
   /**
-   * Called when the editor's options are changed
+   * Called when the toolbar is changed
    * @abstract
-   * @param {object} options
+   * @param {Map.<string, object>} toolbar
    */
-  setOptions() {}
+  setToolbar() {}
+
+  /**
+   * Called when the keymaps are changed
+   * @abstract
+   * @param {Map.<string, object>} keymaps
+   */
+  setKeymaps() {}
 
   /**
    * Get the curent selections
@@ -78,24 +85,18 @@ class GenericAdapter {
   unlock() {}
 
   /**
-   * Get the wrapper element
-   * @abstract
-   * @return {DOMNode}
-   */
-  getWrapperElement() {
-    if (!this.wrapper) {
-      this.wrapper = document.createElement('div');
-    }
-    return this.wrapper;
-  }
-
-  /**
    * Event passthrough
    * @abstract
    * @param {Event} event
    * @param {function} callback
    */
   on() {}
+
+  /**
+   * Destroy the instance
+   * @abstract
+   */
+  destroy() {}
 }
 
 module.exports = GenericAdapter;

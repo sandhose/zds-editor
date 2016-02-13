@@ -1,29 +1,60 @@
-import { Pos, Range } from './util';
-import keycode from 'keycode';
+const { Pos, Range } = require('./util');
+const keycode = require('keycode');
+const { EventEmitter } = require('events');
 
 /**
  * Adapter to use a standard textarea element
  * @class
  * @implements {GenericAdapter}
+ * @extends {EventEmitter}
  */
-class TextareaAdapter {
+class TextareaAdapter extends EventEmitter {
   /**
    * @constructor
    * @param {HTMLTextAreaElement} textarea
    */
   constructor(textarea) {
     if (!textarea) throw new Error('No textarea provided');
+    super();
 
     /** @type {HTMLTextAreaElement} */
-    this.textarea = textarea;
+    this.textareaNode = textarea;
+    /** @type {HTMLTextAreaElement} */
+    this.toolbarNode = document.createElement('div');
+    /** @type {HTMLDivElement} */
+    this.wrapperNode = document.createElement('div');
 
-    this.textarea.addEventListener('keydown', e => this.handleKeydown(e));
+    if (this.textareaNode.parentNode) {
+      this.textareaNode.parentNode.insertBefore(this.wrapperNode, this.textareaNode);
+    }
+    this.wrapperNode.appendChild(this.toolbarNode);
+    this.wrapperNode.appendChild(this.textareaNode);
+
+    this.textareaNode.addEventListener('keydown', e => this.handleKeydown(e));
+    this.textareaNode.addEventListener('paste', e => this.emit('paste', e));
+    this.textareaNode.addEventListener('drop', e => this.emit('drop', e));
   }
 
-  setOptions(options) {
-    if (options.keymaps) {
-      this.keymaps = options.keymaps;
+  /**
+   * Called when the toolbar is changed
+   * @param {Map.<string, object>} toolbar
+   */
+  setToolbar(toolbar) {
+    this.toolbarNode.innerHTML = '';
+    for (const [name, action] of toolbar) {
+      const button = document.createElement('button');
+      button.innerText = name;
+      button.addEventListener('click', () => this.emit('action', action));
+      this.toolbarNode.appendChild(button);
     }
+  }
+
+  /**
+   * Called when the keymaps are changed
+   * @param {Map.<string, object>} keymaps
+   */
+  setKeymaps(keymaps) {
+    this.keymaps = keymaps;
   }
 
   /**
@@ -45,9 +76,9 @@ class TextareaAdapter {
 
     keyStr += keycode(event).toUpperCase();
 
-    if (this.keymaps[keyStr]) {
+    if (this.keymaps.has(keyStr)) {
       event.preventDefault();
-      this.keymaps[keyStr](event);
+      this.emit('action', () => this.keymaps.get(keyStr));
     }
   }
 
@@ -56,7 +87,7 @@ class TextareaAdapter {
    * @return {string[]}
    */
   getText() {
-    return this.textarea.value.split('\n');
+    return this.textareaNode.value.split('\n');
   }
 
   /**
@@ -101,13 +132,13 @@ class TextareaAdapter {
 
   listSelections() {
     return [new Range(
-      this.getPosFromIndex(this.textarea.selectionStart),
-      this.getPosFromIndex(this.textarea.selectionEnd)
+      this.getPosFromIndex(this.textareaNode.selectionStart),
+      this.getPosFromIndex(this.textareaNode.selectionEnd)
     )];
   }
 
   focus() {
-    this.textarea.focus();
+    this.textareaNode.focus();
   }
 
   getRange(range) {
@@ -120,13 +151,13 @@ class TextareaAdapter {
   replaceRange(replacement, range) {
     const startIndex = this.getIndexFromPos(range.start);
     const endIndex = this.getIndexFromPos(range.end);
-    const rawText = this.textarea.value;
-    this.textarea.value = rawText.substring(0, startIndex)
+    const rawText = this.textareaNode.value;
+    this.textareaNode.value = rawText.substring(0, startIndex)
       + replacement + rawText.substring(endIndex);
   }
 
   setSelection(range) {
-    this.textarea.setSelectionRange(
+    this.textareaNode.setSelectionRange(
       this.getIndexFromPos(range.start),
       this.getIndexFromPos(range.end)
     );
@@ -137,19 +168,25 @@ class TextareaAdapter {
   }
 
   lock() {
-    this.textarea.disabled = true;
+    this.textareaNode.disabled = true;
   }
 
   unlock() {
-    this.textarea.disabled = false;
+    this.textareaNode.disabled = false;
   }
 
-  getWrapperElement() {
-    return this.textarea;
-  }
+  /**
+   * Destroy the instance
+   */
+  destroy() {
+    this.removeAllListeners();
+    this.textareaNode.remove();
+    this.toolbarNode.remove();
+    this.wrapperNode.remove();
 
-  on(event, callback, ...args) {
-    return this.textarea.addEventListener(event, callback, ...args);
+    delete this.textareaNode;
+    delete this.toolbarNode;
+    delete this.wrapperNode;
   }
 }
 
