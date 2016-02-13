@@ -19,7 +19,6 @@ class Editor {
       upload: file => new Promise(resolve =>
         setTimeout(() => resolve(URL.createObjectURL(file)), 200)
       ),
-      keymaps: {},
     }, options);
 
     /** @type {Map.<string, object>} */
@@ -37,17 +36,26 @@ class Editor {
    * @param {Adapter} adapter - the adapter to use
    */
   setAdapter(adapter) {
+    // Destroy the old adapter, but keep the text & selections
+    let text;
+    let selections;
     if (this.adapter) {
-      throw new Error('Hot swapping adapter is not supported for now');
+      selections = this.adapter.listSelections();
+      text = this.adapter.getText();
+      this.adapter.destroy();
     }
 
     /** @type {GenericAdapter} */
     this.adapter = adapter;
+    this.adapter.attach();
     this.adapter.setKeymaps(this.keymaps);
     this.adapter.setToolbar(this.toolbar);
     this.adapter.on('paste', e => this.handlePaste(e));
     this.adapter.on('drop', e => this.handleDrop(e));
     this.adapter.on('action', e => this.handleAction(e));
+
+    if (text) this.adapter.setText(text);
+    if (selections) this.adapter.setSelection(...selections);
   }
 
   /**
@@ -173,21 +181,6 @@ class Editor {
    */
   setEmphasis({ text, level, type }) {
     return type.repeat(level) + text + type.repeat(level);
-  }
-
-  /**
-   * Sort a given array of positions
-   * @param {Pos[]} positions
-   * @return {Pos[]}
-   * @example
-   * editor.orderPosition([{ line: 4, ch: 7 }, { line: 4, ch: 5 },
-   *                       { line: 8, ch: 42 }, { line: 2, ch: 9 }]);
-   * [{ line: 2, ch: 9 }, { line: 4, ch: 5 }, { line: 4, ch: 7 }, { line: 8, ch: 42 }]
-   */
-  orderPositions(positions) {
-    return positions.sort((a, b) =>
-      a.line === b.line ? a.ch >= b.ch : a.line >= b.line
-    );
   }
 
   /**

@@ -13,26 +13,34 @@ class CodeMirrorAdapter extends EventEmitter {
     if (!textarea) throw new Error('No textarea provided');
     super();
 
-    this.cm = codemirror.fromTextArea(textarea, Object.assign({
+    /** @type {HTMLTextAreaElement} */
+    this.textareaNode = textarea;
+    /** @type {HTMLDivElement} */
+    this.toolbarNode = document.createElement('div');
+    /** @type {HTMLDivElement} */
+    this.wrapperNode = document.createElement('div');
+    this.wrapperNode.appendChild(this.toolbarNode);
+
+    this.options = options;
+  }
+
+  /**
+   * Called when the adapter is attached
+   */
+  attach() {
+    if (this.textareaNode.parentNode) {
+      this.textareaNode.parentNode.insertBefore(this.wrapperNode, this.textareaNode.nextSibling);
+    }
+    this.wrapperNode.appendChild(this.textareaNode);
+
+    this.cm = codemirror.fromTextArea(this.textareaNode, Object.assign({
       mode: {
         name: 'gfm',
         gitHubSpice: false,
       },
       tabMode: 'indent',
       lineWrapping: true,
-    }, options.codemirror));
-
-    /** @type {HTMLTextAreaElement} */
-    this.toolbarNode = document.createElement('div');
-    /** @type {HTMLDivElement} */
-    this.wrapperNode = document.createElement('div');
-
-    const cmWrapper = this.cm.getWrapperElement();
-    if (cmWrapper.parentNode) {
-      cmWrapper.parentNode.insertBefore(this.wrapperNode, cmWrapper);
-    }
-    this.wrapperNode.appendChild(this.toolbarNode);
-    this.wrapperNode.appendChild(cmWrapper);
+    }, this.options.codemirror));
 
     this.cm.on('paste', (cm, e) => this.emit('paste', e));
     this.cm.on('drop', (cm, e) => this.emit('drop', e));
@@ -95,6 +103,14 @@ class CodeMirrorAdapter extends EventEmitter {
     return this.cm.doc.getLine(line);
   }
 
+  getText() {
+    return this.cm.doc.getValue();
+  }
+
+  setText(text) {
+    return this.cm.doc.setValue(text);
+  }
+
   lock() {
     this.cm.setOption('readOnly', true);
   }
@@ -108,6 +124,11 @@ class CodeMirrorAdapter extends EventEmitter {
    */
   destroy() {
     this.removeAllListeners();
+    this.cm.toTextArea();
+
+    if (this.wrapperNode.parentNode) {
+      this.wrapperNode.parentNode.insertBefore(this.textareaNode, this.wrapperNode.nextSibling);
+    }
     this.toolbarNode.remove();
     this.wrapperNode.remove();
 

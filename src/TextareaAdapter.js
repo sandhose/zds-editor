@@ -23,7 +23,12 @@ class TextareaAdapter extends EventEmitter {
     this.toolbarNode = document.createElement('div');
     /** @type {HTMLDivElement} */
     this.wrapperNode = document.createElement('div');
+  }
 
+  /**
+   * Called when the adapter is attached to the editor
+   */
+  attach() {
     if (this.textareaNode.parentNode) {
       this.textareaNode.parentNode.insertBefore(this.wrapperNode, this.textareaNode);
     }
@@ -78,7 +83,7 @@ class TextareaAdapter extends EventEmitter {
 
     if (this.keymaps.has(keyStr)) {
       event.preventDefault();
-      this.emit('action', () => this.keymaps.get(keyStr));
+      this.emit('action', this.keymaps.get(keyStr));
     }
   }
 
@@ -86,7 +91,7 @@ class TextareaAdapter extends EventEmitter {
    * Get the text inside the textarea
    * @return {string[]}
    */
-  getText() {
+  getLines() {
     return this.textareaNode.value.split('\n');
   }
 
@@ -96,7 +101,7 @@ class TextareaAdapter extends EventEmitter {
    * @return {Pos}
    */
   getPosFromIndex(index) {
-    const text = this.getText();
+    const text = this.getLines();
     let charsBefore = 0;
     for (const i in text) {
       if (charsBefore + text[i].length + 1 > index) {
@@ -122,7 +127,7 @@ class TextareaAdapter extends EventEmitter {
    * @return {number}
    */
   getIndexFromPos(pos) {
-    const text = this.getText();
+    const text = this.getLines();
     let n = 0;
     for (let i = 0; i < pos.line; i++) {
       n += text[i].length + 1;
@@ -132,8 +137,8 @@ class TextareaAdapter extends EventEmitter {
 
   listSelections() {
     return [new Range(
-      this.getPosFromIndex(this.textareaNode.selectionStart),
-      this.getPosFromIndex(this.textareaNode.selectionEnd)
+      this.getPosFromIndex(this.textareaNode.selectionStart || 0),
+      this.getPosFromIndex(this.textareaNode.selectionEnd || 0)
     )];
   }
 
@@ -142,7 +147,7 @@ class TextareaAdapter extends EventEmitter {
   }
 
   getRange(range) {
-    const text = this.getText().slice(range.start.line, range.end.line + 1);
+    const text = this.getLines().slice(range.start.line, range.end.line + 1);
     text[text.length - 1] = text[text.length - 1].substring(0, range.end.ch);
     text[0] = text[0].substring(range.start.ch);
     return text.join('\n');
@@ -164,7 +169,15 @@ class TextareaAdapter extends EventEmitter {
   }
 
   getLine(line) {
-    return this.getText()[line];
+    return this.getLines()[line];
+  }
+
+  getText() {
+    return this.textareaNode.value;
+  }
+
+  setText(text) {
+    this.textareaNode.value = text;
   }
 
   lock() {
@@ -180,11 +193,14 @@ class TextareaAdapter extends EventEmitter {
    */
   destroy() {
     this.removeAllListeners();
-    this.textareaNode.remove();
-    this.toolbarNode.remove();
-    this.wrapperNode.remove();
 
-    delete this.textareaNode;
+    this.wrapperNode.removeChild(this.textareaNode);
+    this.wrapperNode.removeChild(this.toolbarNode);
+    if (this.wrapperNode.parentNode) {
+      this.wrapperNode.parentNode.insertBefore(this.textareaNode, this.wrapperNode);
+      this.wrapperNode.parentNode.removeChild(this.wrapperNode);
+    }
+
     delete this.toolbarNode;
     delete this.wrapperNode;
   }

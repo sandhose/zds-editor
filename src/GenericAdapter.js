@@ -6,7 +6,14 @@ class GenericAdapter {
   /**
    * @constructor
    */
-  constructor() {}
+  constructor() {
+    this.text = '';
+  }
+
+  /**
+   * Called when the adapter is attached
+   */
+  attach() {}
 
   /**
    * Called when the toolbar is changed
@@ -70,6 +77,22 @@ class GenericAdapter {
    */
   getLine() {
     return '';
+  }
+
+  /**
+   * Set the current text
+   * @param {string} text
+   */
+  setText(text) {
+    this.text = text;
+  }
+
+  /**
+   * Get the current text
+   * @return {string}
+   */
+  getText() {
+    return this.text;
   }
 
   /**
