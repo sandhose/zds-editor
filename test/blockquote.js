@@ -1,7 +1,7 @@
 'use strict';
 
-import test from 'tape';
-import { createEditor, destroyEditor } from './createEditor.js';
+const test = require('tape');
+const { createEditor, destroyEditor } = require('./createEditor.js');
 
 test('Editor#getBlockquote', assert => {
   assert.plan(3);

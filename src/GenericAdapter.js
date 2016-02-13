@@ -98,4 +98,4 @@ class GenericAdapter {
   on() {}
 }
 
-export default GenericAdapter;
+module.exports = GenericAdapter;

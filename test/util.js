@@ -1,7 +1,7 @@
 'use strict';
 
-import test from 'tape';
-import { Pos, Range } from '../src/util';
+const test = require('tape');
+const { Pos, Range } = require('../src/util');
 
 test('new Pos()', assert => {
   assert.plan(8);

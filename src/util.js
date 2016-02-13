@@ -70,4 +70,4 @@ class Range {
   }
 }
 
-export { Pos, Range };
+module.exports = { Pos, Range };

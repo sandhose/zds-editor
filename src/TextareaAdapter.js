@@ -153,4 +153,4 @@ class TextareaAdapter {
   }
 }
 
-export default TextareaAdapter;
+module.exports = TextareaAdapter;

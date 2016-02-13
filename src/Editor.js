@@ -1,6 +1,6 @@
 import { Pos, Range } from './util.js';
 
-export default class Editor {
+class Editor {
   /**
    * @callback uploadFunc
    * @param {File} file - The input text
@@ -41,7 +41,10 @@ export default class Editor {
    * @param {Adapter} adapter - the adapter to use
    */
   setAdapter(adapter) {
-    if (this.adapter) throw new Error('Hot swapping adapter is not supported for now');
+    if (this.adapter) {
+      throw new Error('Hot swapping adapter is not supported for now');
+    }
+
     /** @type {GenericAdapter} */
     this.adapter = adapter;
     this.adapter.setOptions(this.options);
@@ -567,3 +570,5 @@ export default class Editor {
     }
   }
 }
+
+module.exports = Editor;

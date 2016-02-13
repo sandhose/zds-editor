@@ -1,8 +1,8 @@
 'use strict';
 
-import test from 'tape';
-import Editor from '../src/Editor.js';
-import GenericAdapter from '../src/GenericAdapter';
+const test = require('tape');
+const Editor = require('../src/Editor.js');
+const GenericAdapter = require('../src/GenericAdapter');
 
 /**
  * Create an editor instance
@@ -19,7 +19,7 @@ const destroyEditor = editor => {
   editor.wrapper.remove();
 };
 
-export { createEditor, destroyEditor };
+module.exports = { createEditor, destroyEditor };
 
 test('Editor#constructor', assert => {
   assert.plan(2);

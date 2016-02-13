@@ -75,4 +75,4 @@ class CodeMirrorAdapter {
   }
 }
 
-export default CodeMirrorAdapter;
+module.exports = CodeMirrorAdapter;
