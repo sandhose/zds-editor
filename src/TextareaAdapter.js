@@ -14,7 +14,7 @@ class TextareaAdapter extends EventEmitter {
    * @param {HTMLTextAreaElement} textarea
    */
   constructor(textarea) {
-    if (!textarea) throw new Error('No textarea provided');
+    if (!textarea || textarea.nodeName !== 'TEXTAREA') throw new Error('No textarea provided');
     super();
 
     /** @type {HTMLTextAreaElement} */
@@ -55,11 +55,11 @@ class TextareaAdapter extends EventEmitter {
   }
 
   /**
-   * Called when the keymaps are changed
-   * @param {Map.<string, object>} keymaps
+   * Called when the keymap is changed
+   * @param {Map.<string, object>} keymap
    */
-  setKeymaps(keymaps) {
-    this.keymaps = keymaps;
+  setKeymap(keymap) {
+    this.keymap = keymap;
   }
 
   /**
@@ -81,9 +81,9 @@ class TextareaAdapter extends EventEmitter {
 
     keyStr += keycode(event).toUpperCase();
 
-    if (this.keymaps.has(keyStr)) {
+    if (this.keymap.has(keyStr)) {
       event.preventDefault();
-      this.emit('action', this.keymaps.get(keyStr));
+      this.emit('action', this.keymap.get(keyStr));
     }
   }
 

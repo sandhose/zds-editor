@@ -27,7 +27,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "codemirror": "^5.11.0"
+    "codemirror": "^5.11.0",
+    "keycode": "^2.1.0"
   },
   "devDependencies": {
     "babel-cli": "^6.5.1",
@@ -38,7 +39,8 @@
     "eslint-config-airbnb": "^5.0.0",
     "exorcist": "^0.4.0",
     "jsdoc": "^3.4.0",
-    "keycode": "^2.1.0",
+    "simulant": "^0.2.0",
+    "sinon": "^1.17.3",
     "tap-dot": "^1.0.1",
     "tape": "^4.4.0",
     "tape-run": "^2.1.3",

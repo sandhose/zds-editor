@@ -22,7 +22,7 @@ class Editor {
     }, options);
 
     /** @type {Map.<string, object>} */
-    this.keymaps = new Map();
+    this.keymap = new Map();
     /** @type {Map.<string, object>} */
     this.toolbar = new Map();
 
@@ -48,7 +48,7 @@ class Editor {
     /** @type {GenericAdapter} */
     this.adapter = adapter;
     this.adapter.attach();
-    this.adapter.setKeymaps(this.keymaps);
+    this.adapter.setKeymap(this.keymap);
     this.adapter.setToolbar(this.toolbar);
     this.adapter.on('paste', e => this.handlePaste(e));
     this.adapter.on('drop', e => this.handleDrop(e));
@@ -63,9 +63,9 @@ class Editor {
    */
   buildToolbar() {
     this.addToolbarButton({ name: 'bold', type: 'emphasis', level: 2,
-                            keymaps: ['Cmd-B', 'Ctrl-B'] });
+                            keymap: ['Cmd-B', 'Ctrl-B'] });
     this.addToolbarButton({ name: 'italic', type: 'emphasis', level: 1,
-                            keymaps: ['Cmd-I', 'Ctrl-I'] });
+                            keymap: ['Cmd-I', 'Ctrl-I'] });
     this.addToolbarButton({ name: 'h1', type: 'heading', level: 1 });
     this.addToolbarButton({ name: 'h2', type: 'heading', level: 2 });
     this.addToolbarButton({ name: 'h3', type: 'heading', level: 3 });
@@ -73,11 +73,11 @@ class Editor {
     this.addToolbarButton({ name: 'h5', type: 'heading', level: 5 });
     this.addToolbarButton({ name: 'h6', type: 'heading', level: 6 });
     this.addToolbarButton({ name: '+quote', type: 'blockquote', level: 1,
-                            keymaps: ["Cmd-'", "Ctrl-'"] });
+                            keymap: ["Cmd-'", "Ctrl-'"] });
     this.addToolbarButton({ name: '-quote', type: 'blockquote', level: -1,
-                            keymaps: ["Cmd-Alt-'", "Ctrl-Alt-'"] });
+                            keymap: ["Cmd-Alt-'", "Ctrl-Alt-'"] });
     this.addToolbarButton({ name: 'code', type: 'code' });
-    this.addToolbarButton({ name: 'link', type: 'link', keymaps: ['Cmd-K', 'Ctrl-K'] });
+    this.addToolbarButton({ name: 'link', type: 'link', keymap: ['Cmd-K', 'Ctrl-K'] });
   }
 
   /**
@@ -537,20 +537,20 @@ class Editor {
    * @param {string} opts.name - The name of the button (if empty, no button will be added)
    * @param {string} opts.type - The type of the button (will be passed to `handleAction`)
    * @param {} opts.level - Arbitrary level (will be passed to `handleAction`)
-   * @param {string[]} opts.keymaps - An array of keymaps to bind to this action
+   * @param {string[]} opts.keymap - An array of keymap to bind to this action
    * @example
    * editor.addToolbarButton({ name: "bold", type: "emphasis", level: 2,
-   *                           keymaps: ["Cmd-B", "Ctrl-B"]});
+   *                           keymap: ["Cmd-B", "Ctrl-B"]});
    */
-  addToolbarButton({ name, type, level, keymaps }) {
+  addToolbarButton({ name, type, level, keymap }) {
     if (name) {
       this.toolbar.set(name, { type, level });
     }
 
-    if (keymaps) {
-      keymaps.forEach(key => {
-        if (this.keymaps.has(key)) throw new Error(`${key} is already registered`);
-        this.keymaps.set(key, { type, level });
+    if (keymap) {
+      keymap.forEach(key => {
+        if (this.keymap.has(key)) throw new Error(`${key} is already registered`);
+        this.keymap.set(key, { type, level });
       });
     }
   }

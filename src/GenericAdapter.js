@@ -23,11 +23,11 @@ class GenericAdapter {
   setToolbar() {}
 
   /**
-   * Called when the keymaps are changed
+   * Called when the keymap is changed
    * @abstract
-   * @param {Map.<string, object>} keymaps
+   * @param {Map.<string, object>} keymap
    */
-  setKeymaps() {}
+  setKeymap() {}
 
   /**
    * Get the curent selections

@@ -61,15 +61,15 @@ class CodeMirrorAdapter extends EventEmitter {
   }
 
   /**
-   * Called when the keymaps are changed
-   * @param {Map.<string, object>} keymaps
+   * Called when the keymap is changed
+   * @param {Map.<string, object>} keymap
    */
-  setKeymaps(keymaps) {
-    const cmKeymaps = {};
-    for (const [key, action] of keymaps) {
-      cmKeymaps[key] = () => this.emit('action', action);
+  setKeymap(keymap) {
+    const cmKeymap = {};
+    for (const [key, action] of keymap) {
+      cmKeymap[key] = () => this.emit('action', action);
     }
-    this.cm.setOption('extraKeys', cmKeymaps);
+    this.cm.setOption('extraKeys', cmKeymap);
   }
 
   listSelections() {
