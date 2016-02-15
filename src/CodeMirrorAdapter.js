@@ -10,7 +10,7 @@ const { EventEmitter } = require('events');
  */
 class CodeMirrorAdapter extends EventEmitter {
   constructor(textarea, options = { codemirror: {} }) {
-    if (!textarea) throw new Error('No textarea provided');
+    if (!textarea || textarea.nodeName !== 'TEXTAREA') throw new Error('No textarea provided');
     super();
 
     /** @type {HTMLTextAreaElement} */
@@ -108,7 +108,8 @@ class CodeMirrorAdapter extends EventEmitter {
   }
 
   setText(text) {
-    return this.cm.doc.setValue(text);
+    this.cm.doc.setValue(text);
+    this.cm.save();
   }
 
   lock() {

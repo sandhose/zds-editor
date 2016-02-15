@@ -178,7 +178,6 @@ test('TextareaAdapter#getRange', assert => {
   )), 'ep\nbo', 'returns the text of a multi-line range');
 
   adapter.destroy();
-  textarea.remove();
   assert.end();
 });
 
