@@ -143,7 +143,7 @@ test('TextareaAdapter#listSelections', assert => {
   )], 'returns an array with a Range with the selection');
 
   adapter.destroy();
-  textarea.remove();
+  document.body.removeChild(textarea);
   assert.end();
 });
 
@@ -160,7 +160,7 @@ test('TextareaAdapter#focus', assert => {
   assert.equal(document.activeElement, textarea, 'textarea should have the focus');
 
   adapter.destroy();
-  textarea.remove();
+  document.body.removeChild(textarea);
   assert.end();
 });
 
@@ -213,7 +213,7 @@ test('TextareaAdapter#setSelection', assert => {
   assert.equal(textarea.selectionEnd, 7, 'should set the selection (end)');
 
   adapter.destroy();
-  textarea.remove();
+  document.body.removeChild(textarea);
   assert.end();
 });
 

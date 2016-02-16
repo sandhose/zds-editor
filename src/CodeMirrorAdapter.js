@@ -127,11 +127,11 @@ class CodeMirrorAdapter extends EventEmitter {
     this.removeAllListeners();
     this.cm.toTextArea();
 
+    this.wrapperNode.removeChild(this.toolbarNode);
     if (this.wrapperNode.parentNode) {
       this.wrapperNode.parentNode.insertBefore(this.textareaNode, this.wrapperNode.nextSibling);
+      this.wrapperNode.parentNode.removeChild(this.wrapperNode);
     }
-    this.toolbarNode.remove();
-    this.wrapperNode.remove();
 
     delete this.toolbarNode;
     delete this.wrapperNode;
