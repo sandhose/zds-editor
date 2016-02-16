@@ -191,6 +191,7 @@ class Editor {
    * @property {number} level - The number of space before the item
    * @property {string} text - The text of the list item
    * @property {boolean} ordered - True if it is an ordered list
+   * @property {string} [bullet] - `*` or `-`
    * @property {number} [number] - The number of the ordered list
    */
 
@@ -200,12 +201,13 @@ class Editor {
    * @return {ListItem}
    */
   getListItem(text) {
-    const match = /([ ]+)(-|[0-9]+\.) (.*)/.exec(text);
+    const match = /([ ]*)(\*|-|[0-9]+\.) (.*)/.exec(text);
     if (match) {
-      if (match[2] === '-') {
+      if (match[2] === '-' || match[2] === '*') {
         return {
           level: match[1].length,
           ordered: false,
+          bullet: match[2],
           text: match[3],
         };
       }
@@ -229,12 +231,12 @@ class Editor {
    * @param {ListItem} item
    * @return {string}
    */
-  setListItem({ text, level, ordered, number }) {
+  setListItem({ text, level, ordered, number, bullet }) {
     if (level === -1) {
       return text;
     }
 
-    const prefix = ordered ? `${number}.` : '-';
+    const prefix = ordered ? `${number}.` : bullet;
     return `${' '.repeat(level)}${prefix} ${text}`;
   }
 
