@@ -26,6 +26,8 @@ class Editor {
     /** @type {Map.<string, object>} */
     this.toolbar = new Map();
 
+    this.keymap.set('Enter', e => this.handleEnter(e));
+
     this.buildToolbar();
 
     this.setAdapter(adapter);
@@ -181,6 +183,59 @@ class Editor {
    */
   setEmphasis({ text, level, type }) {
     return type.repeat(level) + text + type.repeat(level);
+  }
+
+  /**
+   * @typedef ListItem
+   * @type Object
+   * @property {number} level - The number of space before the item
+   * @property {string} text - The text of the list item
+   * @property {boolean} ordered - True if it is an ordered list
+   * @property {number} [number] - The number of the ordered list
+   */
+
+  /**
+   * Return the list type, level and text for a given text
+   * @param {string} text - The text to parse
+   * @return {ListItem}
+   */
+  getListItem(text) {
+    const match = /([ ]+)(-|[0-9]+\.) (.*)/.exec(text);
+    if (match) {
+      if (match[2] === '-') {
+        return {
+          level: match[1].length,
+          ordered: false,
+          text: match[3],
+        };
+      }
+
+      return {
+        level: match[1].length,
+        ordered: true,
+        text: match[3],
+        number: parseInt(match[2], 10),
+      };
+    }
+
+    return {
+      level: -1,
+      text,
+    };
+  }
+
+  /**
+   * Return the text representation of a ListItem
+   * @param {ListItem} item
+   * @return {string}
+   */
+  setListItem({ text, level, ordered, number }) {
+    if (level === -1) {
+      return text;
+    }
+
+    const prefix = ordered ? `${number}.` : '-';
+    return `${' '.repeat(level)}${prefix} ${text}`;
   }
 
   /**
@@ -460,6 +515,34 @@ class Editor {
     }
 
     this.adapter.focus();
+  }
+
+  /**
+   * Called when the enter key is pressed
+   * Does things like continue a list
+   */
+  handleEnter() {
+    const selections = this.adapter.listSelections();
+    if (selections.length === 1 && Pos.compare(selections[0].start, selections[0].end) === 0) {
+      const cursor = selections[0].start;
+      const listItem = this.getListItem(this.adapter.getLine(cursor.line));
+
+      if (listItem.level === -1) {
+        this.mapRanges(() => ({ text: '\n', selection: [1, 0] }), [new Range(cursor, cursor)]);
+      } else if (listItem.text === ''
+              && this.getListItem(this.adapter.getLine(cursor.line - 1)).level !== -1) {
+        this.mapRanges(() => ({ text: '\n', selection: [1, 0] }),
+                       this.expandSelectionsToLines([new Range(cursor, cursor)]));
+      } else {
+        if (listItem.ordered) listItem.number++;
+        listItem.text = '';
+        const newText = this.setListItem(listItem);
+        this.mapRanges(() => ({ text: `\n${newText}`, selection: [newText.length + 1, 0] }),
+                       [new Range(cursor, cursor)]);
+      }
+    } else {
+      this.mapRanges(() => ({ text: '\n', selection: [1, 0] }), selections);
+    }
   }
 
   /**

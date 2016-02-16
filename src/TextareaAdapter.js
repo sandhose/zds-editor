@@ -79,11 +79,14 @@ class TextareaAdapter extends EventEmitter {
       if (event[key]) keyStr += `${name}-`;
     }
 
-    keyStr += keycode(event).toUpperCase();
+    const k = keycode(event);
+    keyStr += k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
 
     if (this.keymap.has(keyStr)) {
       event.preventDefault();
-      this.emit('action', this.keymap.get(keyStr));
+      const action = this.keymap.get(keyStr);
+      if (typeof action === 'function') action();
+      else this.emit('action', action);
     }
   }
 

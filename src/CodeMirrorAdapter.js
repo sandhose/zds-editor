@@ -67,7 +67,11 @@ class CodeMirrorAdapter extends EventEmitter {
   setKeymap(keymap) {
     const cmKeymap = {};
     for (const [key, action] of keymap) {
-      cmKeymap[key] = () => this.emit('action', action);
+      if (typeof action === 'function') {
+        cmKeymap[key] = action;
+      } else {
+        cmKeymap[key] = () => this.emit('action', action);
+      }
     }
     this.cm.setOption('extraKeys', cmKeymap);
   }
