@@ -157,11 +157,17 @@ class TextareaAdapter extends EventEmitter {
   }
 
   replaceRange(replacement, range) {
-    const startIndex = this.getIndexFromPos(range.start);
-    const endIndex = this.getIndexFromPos(range.end);
-    const rawText = this.textareaNode.value;
-    this.textareaNode.value = rawText.substring(0, startIndex)
-      + replacement + rawText.substring(endIndex);
+    if (document.queryCommandEnabled('insertText')) {
+      this.setSelection(range);
+      this.focus();
+      document.execCommand('insertText', false, replacement);
+    } else {
+      const startIndex = this.getIndexFromPos(range.start);
+      const endIndex = this.getIndexFromPos(range.end);
+      const rawText = this.textareaNode.value;
+      this.textareaNode.value = rawText.substring(0, startIndex)
+        + replacement + rawText.substring(endIndex);
+    }
   }
 
   setSelection(range) {

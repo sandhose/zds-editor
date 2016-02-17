@@ -201,7 +201,7 @@ class Editor {
    * @return {ListItem}
    */
   getListItem(text) {
-    const match = /([ ]*)(\*|-|[0-9]+\.) (.*)/.exec(text);
+    const match = /^([ ]*)(\*|-|[0-9]+\.) (.*)$/.exec(text);
     if (match) {
       if (match[2] === '-' || match[2] === '*') {
         return {
