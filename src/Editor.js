@@ -98,7 +98,7 @@ class Editor {
    * { level: 2, text: "test" }
    */
   getHeading(text) {
-    const match = text.match(/^(#{0,6})(.*)$/);
+    const match = /^(#{0,6})(.*)$/.exec(text);
     return { level: match[1].length, text: match[2].trim() };
   }
 
@@ -130,7 +130,7 @@ class Editor {
    * { level: 3, text: "nested" }
    */
   getBlockquote(text) {
-    const match = text.match(/^((> )*)(.*)$/);
+    const match = /^((> )*)(.*)$/.exec(text);
     return { level: match[1].length / 2, text: match[3] };
   }
 
@@ -411,6 +411,11 @@ class Editor {
     }
 
     if (level === 'heading') {
+      const listItem = this.getListItem(text);
+      text = listItem.text;
+      listItem.text = '';
+      prefix += this.setListItem(listItem);
+
       const heading = this.getHeading(text);
       text = heading.text;
       heading.text = '';
@@ -527,18 +532,28 @@ class Editor {
     const selections = this.adapter.listSelections();
     if (selections.length === 1 && Pos.compare(selections[0].start, selections[0].end) === 0) {
       const cursor = selections[0].start;
-      const listItem = this.getListItem(this.adapter.getLine(cursor.line));
+      const blockquote = this.getBlockquote(this.adapter.getLine(cursor.line));
+      const listItem = this.getListItem(blockquote.text);
 
-      if (listItem.level === -1) {
+      const prevBlockquote = this.getBlockquote(this.adapter.getLine(cursor.line - 1));
+      const prevListItem = this.getListItem(prevBlockquote.text);
+
+      if (blockquote.level === 0 && listItem.level === -1) {
         this.mapRanges(() => ({ text: '\n', selection: [1, 0] }), [new Range(cursor, cursor)]);
-      } else if (listItem.text === ''
-              && this.getListItem(this.adapter.getLine(cursor.line - 1)).level !== -1) {
+      } else if (blockquote.text === '' && prevBlockquote.level > 0) {
         this.mapRanges(() => ({ text: '\n', selection: [1, 0] }),
+                       this.expandSelectionsToLines([new Range(cursor, cursor)]));
+      } else if (listItem.text === '' && prevListItem.level > -1) {
+        blockquote.text = '';
+        const quoteText = this.setBlockquote(blockquote);
+        this.mapRanges(() => ({ text: `${quoteText}\n${quoteText}`,
+                                selection: [1 + quoteText.length * 2, 0] }),
                        this.expandSelectionsToLines([new Range(cursor, cursor)]));
       } else {
         if (listItem.ordered) listItem.number++;
         listItem.text = '';
-        const newText = this.setListItem(listItem);
+        blockquote.text = this.setListItem(listItem);
+        const newText = this.setBlockquote(blockquote);
         this.mapRanges(() => ({ text: `\n${newText}`, selection: [newText.length + 1, 0] }),
                        [new Range(cursor, cursor)]);
       }
