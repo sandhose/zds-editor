@@ -618,11 +618,11 @@ class Editor {
       const listItem = this.getListItem(indentedText.text);
       const cursor = cursors.find(pos => Pos.compare(pos, range.start) >= 0
                                       && Pos.compare(pos, range.end) <= 0);
-      return { range, blockquote, indentedText, listItem, cursor };
+      return { line: range.start.line, range, blockquote, indentedText, listItem, cursor };
     });
 
     let hasCursor = false; // Track if there was a new cursor position set
-    for (const { range, blockquote, indentedText, listItem, cursor } of linesData) {
+    for (const { line, range, blockquote, indentedText, listItem, cursor } of linesData) {
       // In case it was a tab without selection not on a list, do smart-indent on cursor
       if (cursor && selections.length === 1 && !listItem.type && !reverse) {
         const shift = 4 - (cursor.ch % 4); // Smart-indent
@@ -634,8 +634,25 @@ class Editor {
         const indentAdd = (reverse ? -1 : 1) * (listItem.type ? 2 : 4);
         const newIndentedText = Object.assign({}, indentedText);
         newIndentedText.level = Math.max(newIndentedText.level + indentAdd, 0);
-        // @TODO: get previous list number on reverse
+
         listItem.number = 1; // Reset ordered list number
+        // Lets check on the previous lines if we already have a list item with the same indent
+        // so we can use its type, and eventually its number
+        for (let i = line - 1; i >= 0; i--) {
+          const prevBlockquote = this.getBlockquote(this.adapter.getLine(i));
+          const prevIndentedText = this.getIndentedText(prevBlockquote.text);
+          const prevListItem = this.getListItem(prevIndentedText.text);
+          if (prevListItem.type === null) break; // We are outside the list
+          if (prevIndentedText.level === newIndentedText.level
+             && prevBlockquote.level === blockquote.level) {
+            // We found a list item that matches the indent ; let's copy his type
+            listItem.type = prevListItem.type;
+            listItem.bullet = prevListItem.bullet;
+            if (i === line - 1) listItem.number = Math.max(1, prevListItem.number + 1);
+            break;
+          }
+        }
+
         newIndentedText.text = this.setListItem(listItem);
         blockquote.text = this.setIndentedText(newIndentedText);
         const newText = this.setBlockquote(blockquote);
