@@ -1,6 +1,6 @@
 {
   "name": "zds-editor",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Markdown editor used on Zeste de Savoir",
   "main": "lib/index.js",
   "scripts": {
