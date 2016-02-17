@@ -558,38 +558,42 @@ class Editor {
 
   /**
    * Called when the enter key is pressed
-   * Does things like continue a list
+   * Does things like continue a list or a blockquote
    */
   handleEnter() {
     const selections = this.adapter.listSelections();
+    // Do those weird stuff only when there is a single cursor (no selection)
     if (selections.length === 1 && Pos.compare(selections[0].start, selections[0].end) === 0) {
       const cursor = selections[0].start;
       const blockquote = this.getBlockquote(this.adapter.getLine(cursor.line));
       const indentedText = this.getIndentedText(blockquote.text);
       const listItem = this.getListItem(indentedText.text);
 
+      // Previous line information
       const prevBlockquote = this.getBlockquote(this.adapter.getLine(cursor.line - 1));
       const prevIndentedText = this.getIndentedText(prevBlockquote.text);
       const prevListItem = this.getListItem(prevIndentedText.text);
 
       if (blockquote.level === 0 && indentedText.level === 0 && !listItem.type) {
+        // Nothing special on this line, let's act like a normal carriage return
         this.mapRanges(() => ({ text: '\n', selection: [1, 0] }), [new Range(cursor, cursor)]);
       } else if (blockquote.text === '' && prevBlockquote.level > 0) {
+        // The Blockquote on this line is empty, and the previous line has Blockquote
+        // Let's remove this line's empty Blockquote
         this.mapRanges(() => ({ text: '\n', selection: [1, 0] }),
                        this.expandSelectionsToLines([new Range(cursor, cursor)]));
-      } else if (indentedText.text === '' && prevIndentedText.level > 0) {
-        blockquote.text = '';
-        const quoteText = this.setBlockquote(blockquote);
-        this.mapRanges(() => ({ text: `${quoteText}\n${quoteText}`,
-                                selection: [1 + quoteText.length * 2, 0] }),
-                       this.expandSelectionsToLines([new Range(cursor, cursor)]));
-      } else if (listItem.text === '' && prevListItem.type !== null) {
+      } else if ((indentedText.text === '' && prevIndentedText.level > 0)
+                 || !(listItem.text === '' && prevListItem.type !== null)) {
+        // This line has an empty list item OR an empty indented text
+        // Let's only keep the Blockquote on this line and on the next
         blockquote.text = '';
         const quoteText = this.setBlockquote(blockquote);
         this.mapRanges(() => ({ text: `${quoteText}\n${quoteText}`,
                                 selection: [1 + quoteText.length * 2, 0] }),
                        this.expandSelectionsToLines([new Range(cursor, cursor)]));
       } else {
+        // There is a non-empty ListItem OR non-empty Blockquote OR non-empty IndentedText
+        // Let's keep those properties for the next line
         if (listItem.type === 'ordered') listItem.number++;
         listItem.text = '';
         indentedText.text = this.setListItem(listItem);
@@ -608,9 +612,11 @@ class Editor {
    */
   handleTab(reverse = false) {
     const selections = this.adapter.listSelections();
+    // Extract all the selections that are cursors (zero-width ranges)
     const cursors = selections.filter(({ start, end }) => Pos.compare(start, end) === 0)
                               .map(({ start }) => start);
     const lines = this.extractLines(selections, true);
+    // First, extract all the informations we can get from the line
     const linesData = lines.map(range => {
       const text = this.adapter.getRange(range);
       const blockquote = this.getBlockquote(text);
@@ -618,49 +624,54 @@ class Editor {
       const listItem = this.getListItem(indentedText.text);
       const cursor = cursors.find(pos => Pos.compare(pos, range.start) >= 0
                                       && Pos.compare(pos, range.end) <= 0);
-      return { line: range.start.line, range, blockquote, indentedText, listItem, cursor };
+      return { text, line: range.start.line, range, blockquote, indentedText, listItem, cursor };
     });
 
     let hasCursor = false; // Track if there was a new cursor position set
-    for (const { line, range, blockquote, indentedText, listItem, cursor } of linesData) {
-      // In case it was a tab without selection not on a list, do smart-indent on cursor
+    for (const { text, line, range, blockquote, indentedText, listItem, cursor } of linesData) {
       if (cursor && selections.length === 1 && !listItem.type && !reverse) {
+        // In case it was a tab without selection not on a list, do smart-indent on cursor
         const shift = 4 - (cursor.ch % 4); // Smart-indent
         this.adapter.replaceRange(' '.repeat(shift), new Range(cursor));
-        cursor.ch += shift;
+        cursor.ch += shift; // Shift the cursor
         this.adapter.setSelection(new Range(cursor));
         hasCursor = true;
       } else {
+        // The indentation to add. Negative if reverse ; 2 for lists, 4 for the rest
         const indentAdd = (reverse ? -1 : 1) * (listItem.type ? 2 : 4);
-        const newIndentedText = Object.assign({}, indentedText);
-        newIndentedText.level = Math.max(newIndentedText.level + indentAdd, 0);
+        // Indent the text, but never under 0
+        indentedText.level = Math.max(indentedText.level + indentAdd, 0);
 
         listItem.number = 1; // Reset ordered list number
         // Lets check on the previous lines if we already have a list item with the same indent
         // so we can use its type, and eventually its number
+        let parentMetYet = false;
         for (let i = line - 1; i >= 0; i--) {
           const prevBlockquote = this.getBlockquote(this.adapter.getLine(i));
           const prevIndentedText = this.getIndentedText(prevBlockquote.text);
           const prevListItem = this.getListItem(prevIndentedText.text);
           if (prevListItem.type === null) break; // We are outside the list
-          if (prevIndentedText.level === newIndentedText.level
+          else if (prevIndentedText.level === indentedText.level
              && prevBlockquote.level === blockquote.level) {
             // We found a list item that matches the indent ; let's copy his type
             listItem.type = prevListItem.type;
             listItem.bullet = prevListItem.bullet;
-            if (i === line - 1) listItem.number = Math.max(1, prevListItem.number + 1);
+            if (!parentMetYet) listItem.number = Math.max(1, prevListItem.number + 1);
             break;
+          } else if (prevIndentedText.level < indentedText.level) {
+            parentMetYet = true;
           }
         }
 
-        newIndentedText.text = this.setListItem(listItem);
-        blockquote.text = this.setIndentedText(newIndentedText);
+        // Rebuild the line based on the modifications
+        indentedText.text = this.setListItem(listItem);
+        blockquote.text = this.setIndentedText(indentedText);
         const newText = this.setBlockquote(blockquote);
         this.adapter.replaceRange(newText, range);
 
         // If the list item is empty, set the cursor position at the end of the list item
         if (listItem.text === '' && cursor && selections.length === 1) {
-          cursor.ch += (newIndentedText.level - indentedText.level);
+          cursor.ch += (newText.length - text.length);
           this.adapter.setSelection(new Range(cursor));
           hasCursor = true;
         }
@@ -668,6 +679,7 @@ class Editor {
     }
 
     if (!hasCursor) {
+      // No cursor position were set, let's select every affected lines
       this.adapter.setSelection(...this.expandSelectionsToLines(selections));
     }
   }
