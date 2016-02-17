@@ -26,7 +26,9 @@ class Editor {
     /** @type {Map.<string, object>} */
     this.toolbar = new Map();
 
-    this.keymap.set('Enter', e => this.handleEnter(e));
+    this.keymap.set('Enter', () => this.handleEnter());
+    this.keymap.set('Tab', () => this.handleTab(false));
+    this.keymap.set('Shift-Tab', () => this.handleTab(true));
 
     this.buildToolbar();
 
@@ -205,23 +207,21 @@ class Editor {
     if (match) {
       if (match[2] === '-' || match[2] === '*') {
         return {
-          level: match[1].length,
-          ordered: false,
+          type: 'unordered',
           bullet: match[2],
           text: match[3],
         };
       }
 
       return {
-        level: match[1].length,
-        ordered: true,
+        type: 'ordered',
         text: match[3],
         number: parseInt(match[2], 10),
       };
     }
 
     return {
-      level: -1,
+      type: null,
       text,
     };
   }
@@ -231,13 +231,45 @@ class Editor {
    * @param {ListItem} item
    * @return {string}
    */
-  setListItem({ text, level, ordered, number, bullet }) {
-    if (level === -1) {
+  setListItem({ text, type, number, bullet }) {
+    if (!type) {
       return text;
     }
 
-    const prefix = ordered ? `${number}.` : bullet;
-    return `${' '.repeat(level)}${prefix} ${text}`;
+    const prefix = type === 'ordered' ? `${number}.` : bullet;
+    return `${prefix} ${text}`;
+  }
+
+  /**
+   * @typedef IndentedText
+   * @type Object
+   * @property {number} level - The level of indentation
+   * @property {string} text - The indented text
+   */
+
+  /**
+   * Get the indentation level and text for a given text
+   * @param {string} text - The text to parse
+   * @return {IndentedText} The parsed IndentedText
+   * @example
+   * editor.getBlockquote("   code");
+   * { level: 3, text: "code" }
+   */
+  getIndentedText(text) {
+    const match = /^( *)([^ ](.*))?$/.exec(text);
+    return { level: match[1].length, text: match[2] || '' };
+  }
+
+  /**
+   * Return the text representation of a IndentedText
+   * @param {IndentedText} indentedText
+   * @return {string}
+   * @example
+   * editor.setIndentedText({ level: 2, text: "code" });
+   * "  code"
+   */
+  setIndentedText({ level, text }) {
+    return `${' '.repeat(level)}${text}`;
   }
 
   /**
@@ -533,32 +565,93 @@ class Editor {
     if (selections.length === 1 && Pos.compare(selections[0].start, selections[0].end) === 0) {
       const cursor = selections[0].start;
       const blockquote = this.getBlockquote(this.adapter.getLine(cursor.line));
-      const listItem = this.getListItem(blockquote.text);
+      const indentedText = this.getIndentedText(blockquote.text);
+      const listItem = this.getListItem(indentedText.text);
 
       const prevBlockquote = this.getBlockquote(this.adapter.getLine(cursor.line - 1));
-      const prevListItem = this.getListItem(prevBlockquote.text);
+      const prevIndentedText = this.getIndentedText(prevBlockquote.text);
+      const prevListItem = this.getListItem(prevIndentedText.text);
 
-      if (blockquote.level === 0 && listItem.level === -1) {
+      if (blockquote.level === 0 && indentedText.level === 0 && !listItem.type) {
         this.mapRanges(() => ({ text: '\n', selection: [1, 0] }), [new Range(cursor, cursor)]);
       } else if (blockquote.text === '' && prevBlockquote.level > 0) {
         this.mapRanges(() => ({ text: '\n', selection: [1, 0] }),
                        this.expandSelectionsToLines([new Range(cursor, cursor)]));
-      } else if (listItem.text === '' && prevListItem.level > -1) {
+      } else if (indentedText.text === '' && prevIndentedText.level > 0) {
+        blockquote.text = '';
+        const quoteText = this.setBlockquote(blockquote);
+        this.mapRanges(() => ({ text: `${quoteText}\n${quoteText}`,
+                                selection: [1 + quoteText.length * 2, 0] }),
+                       this.expandSelectionsToLines([new Range(cursor, cursor)]));
+      } else if (listItem.text === '' && prevListItem.type !== null) {
         blockquote.text = '';
         const quoteText = this.setBlockquote(blockquote);
         this.mapRanges(() => ({ text: `${quoteText}\n${quoteText}`,
                                 selection: [1 + quoteText.length * 2, 0] }),
                        this.expandSelectionsToLines([new Range(cursor, cursor)]));
       } else {
-        if (listItem.ordered) listItem.number++;
+        if (listItem.type === 'ordered') listItem.number++;
         listItem.text = '';
-        blockquote.text = this.setListItem(listItem);
+        indentedText.text = this.setListItem(listItem);
+        blockquote.text = this.setIndentedText(indentedText);
         const newText = this.setBlockquote(blockquote);
         this.mapRanges(() => ({ text: `\n${newText}`, selection: [newText.length + 1, 0] }),
                        [new Range(cursor, cursor)]);
       }
     } else {
       this.mapRanges(() => ({ text: '\n', selection: [1, 0] }), selections);
+    }
+  }
+
+  /**
+   * Called when the `tab` key is pressed
+   */
+  handleTab(reverse = false) {
+    const selections = this.adapter.listSelections();
+    const cursors = selections.filter(({ start, end }) => Pos.compare(start, end) === 0)
+                              .map(({ start }) => start);
+    const lines = this.extractLines(selections, true);
+    const linesData = lines.map(range => {
+      const text = this.adapter.getRange(range);
+      const blockquote = this.getBlockquote(text);
+      const indentedText = this.getIndentedText(blockquote.text);
+      const listItem = this.getListItem(indentedText.text);
+      const cursor = cursors.find(pos => Pos.compare(pos, range.start) >= 0
+                                      && Pos.compare(pos, range.end) <= 0);
+      return { range, blockquote, indentedText, listItem, cursor };
+    });
+
+    let hasCursor = false; // Track if there was a new cursor position set
+    for (const { range, blockquote, indentedText, listItem, cursor } of linesData) {
+      // In case it was a tab without selection not on a list, do smart-indent on cursor
+      if (cursor && selections.length === 1 && !listItem.type && !reverse) {
+        const shift = 4 - (cursor.ch % 4); // Smart-indent
+        this.adapter.replaceRange(' '.repeat(shift), new Range(cursor));
+        cursor.ch += shift;
+        this.adapter.setSelection(new Range(cursor));
+        hasCursor = true;
+      } else {
+        const indentAdd = (reverse ? -1 : 1) * (listItem.type ? 2 : 4);
+        const newIndentedText = Object.assign({}, indentedText);
+        newIndentedText.level = Math.max(newIndentedText.level + indentAdd, 0);
+        // @TODO: get previous list number on reverse
+        listItem.number = 1; // Reset ordered list number
+        newIndentedText.text = this.setListItem(listItem);
+        blockquote.text = this.setIndentedText(newIndentedText);
+        const newText = this.setBlockquote(blockquote);
+        this.adapter.replaceRange(newText, range);
+
+        // If the list item is empty, set the cursor position at the end of the list item
+        if (listItem.text === '' && cursor && selections.length === 1) {
+          cursor.ch += (newIndentedText.level - indentedText.level);
+          this.adapter.setSelection(new Range(cursor));
+          hasCursor = true;
+        }
+      }
+    }
+
+    if (!hasCursor) {
+      this.adapter.setSelection(...this.expandSelectionsToLines(selections));
     }
   }
 

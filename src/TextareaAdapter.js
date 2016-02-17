@@ -80,7 +80,7 @@ class TextareaAdapter extends EventEmitter {
     }
 
     const k = keycode(event);
-    keyStr += k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
+    if (k) keyStr += k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
 
     if (this.keymap.has(keyStr)) {
       event.preventDefault();
