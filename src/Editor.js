@@ -583,7 +583,7 @@ class Editor {
         this.mapRanges(() => ({ text: '\n', selection: [1, 0] }),
                        this.expandSelectionsToLines([new Range(cursor, cursor)]));
       } else if ((indentedText.text === '' && prevIndentedText.level > 0)
-                 || !(listItem.text === '' && prevListItem.type !== null)) {
+                  || (listItem.text === '' && prevListItem.type !== null)) {
         // This line has an empty list item OR an empty indented text
         // Let's only keep the Blockquote on this line and on the next
         blockquote.text = '';

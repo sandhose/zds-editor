@@ -1,3 +1,4 @@
+import 'babel-polyfill';
 import Editor from './Editor';
 import CodeMirrorAdapter from './CodeMirrorAdapter';
 import TextareaAdapter from './TextareaAdapter';

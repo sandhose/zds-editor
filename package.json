@@ -27,6 +27,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "babel-polyfill": "^6.5.0",
     "codemirror": "^5.11.0",
     "keycode": "^2.1.0"
   },
