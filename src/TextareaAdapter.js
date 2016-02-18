@@ -48,7 +48,7 @@ class TextareaAdapter extends EventEmitter {
     this.toolbarNode.innerHTML = '';
     for (const [name, action] of toolbar) {
       const button = document.createElement('button');
-      button.innerText = name;
+      button.innerHTML = name;
       button.addEventListener('click', () => this.emit('action', action));
       this.toolbarNode.appendChild(button);
     }
