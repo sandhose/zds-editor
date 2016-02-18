@@ -38,9 +38,12 @@ class TextareaAdapter extends EventEmitter {
     this.wrapperNode.appendChild(this.toolbarNode);
     this.wrapperNode.appendChild(this.textareaNode);
 
-    this.textareaNode.addEventListener('keydown', e => this.handleKeydown(e));
-    this.textareaNode.addEventListener('paste', e => this.emit('paste', e));
-    this.textareaNode.addEventListener('drop', e => this.emit('drop', e));
+    this._keydownHandler = e => this.handleKeydown(e);
+    this._pasteHandler = e => this.emit('paste', e);
+    this._dropHandler = e => this.emit('drop', e);
+    this.textareaNode.addEventListener('keydown', this._keydownHandler);
+    this.textareaNode.addEventListener('paste', this._pasteHandler);
+    this.textareaNode.addEventListener('drop', this._dropHandler);
   }
 
   /**
@@ -53,6 +56,7 @@ class TextareaAdapter extends EventEmitter {
       const button = document.createElement('button');
       button.innerHTML = name;
       button.className = `editor-button editor-button-${action.type}`;
+      if (action.alt) button.title = action.alt;
       button.addEventListener('click', () => this.emit('action', action));
       this.toolbarNode.appendChild(button);
     }
@@ -210,6 +214,10 @@ class TextareaAdapter extends EventEmitter {
    */
   destroy() {
     this.removeAllListeners();
+
+    this.textareaNode.removeEventListener('keydown', this._keydownHandler);
+    this.textareaNode.removeEventListener('paste', this._pasteHandler);
+    this.textareaNode.removeEventListener('drop', this._dropHandler);
 
     this.wrapperNode.removeChild(this.textareaNode);
     this.wrapperNode.removeChild(this.toolbarNode);
