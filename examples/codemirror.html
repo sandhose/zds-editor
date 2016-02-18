@@ -4,21 +4,17 @@
   <meta charset="UTF-8">
   <title>zds-editor codemirror example</title>
   <link rel="stylesheet" href="../node_modules/codemirror/lib/codemirror.css" />
-  <style>
-    .CodeMirror {
-      height: 300px;
-      width: 500px;
-      border: solid 1px #ccc;
-    }
-  </style>
+  <link rel="stylesheet" href="./examples.css" />
 </head>
 <body>
   <textarea id="editor"></textarea>
+  <div id="options"><h3>Options:</h3></div>
   <script src="../lib/bundle.js"></script>
   <script>
     var CodeMirrorAdapter = Editor.CodeMirrorAdapter;
     var adapter = new CodeMirrorAdapter(document.getElementById('editor'));
-    var editor = new Editor(adapter);
+    window.editor = new Editor(adapter);
   </script>
+  <script src="./examples.js"></script>
 </body>
 </html>

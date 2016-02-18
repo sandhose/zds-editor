@@ -4,30 +4,20 @@
   <meta charset="UTF-8">
   <title>zds-editor basic example</title>
   <link rel="stylesheet" href="../node_modules/codemirror/lib/codemirror.css" />
-  <style>
-    #editor, .CodeMirror {
-      font-family: monospace;
-      font-size: 14px;
-      height: 300px;
-      width: 500px;
-      resize: none;
-      border: solid 1px #ccc;
-    }
-
-    #editor:focus {
-      outline: none;
-    }
-  </style>
+  <link rel="stylesheet" href="./examples.css" />
 </head>
 <body>
-  <button id="swap">swap adapter</button>
   <textarea id="editor"></textarea>
+  <div id="options">
+    <h3>Options:</h3>
+    <button id="swap">swap adapter</button>
+  </div>
   <script src="../lib/bundle.js"></script>
   <script>
     var TextareaAdapter = Editor.TextareaAdapter;
     var CodeMirrorAdapter = Editor.CodeMirrorAdapter;
     var textarea = document.getElementById('editor');
-    var editor = new Editor(new TextareaAdapter(textarea));
+    window.editor = new Editor(new TextareaAdapter(textarea));
     var isCm = false;
 
     document.getElementById('swap').addEventListener('click', function() {
@@ -39,5 +29,6 @@
       }
     });
   </script>
+  <script src="./examples.js"></script>
 </body>
 </html>

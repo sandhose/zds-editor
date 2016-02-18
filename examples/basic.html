@@ -3,28 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>zds-editor basic example</title>
-  <style>
-    #editor {
-      font-family: monospace;
-      font-size: 14px;
-      height: 300px;
-      width: 500px;
-      resize: none;
-      border: solid 1px #ccc;
-    }
-
-    #editor:focus {
-      outline: none;
-    }
-  </style>
+  <link rel="stylesheet" href="./examples.css" />
 </head>
 <body>
   <textarea id="editor"></textarea>
+  <div id="options"><h3>Options:</h3></div>
   <script src="../lib/bundle.js"></script>
   <script>
     var TextareaAdapter = Editor.TextareaAdapter;
     var adapter = new TextareaAdapter(document.getElementById('editor'));
-    var editor = new Editor(adapter);
+    window.editor = new Editor(adapter);
   </script>
+  <script src="./examples.js"></script>
 </body>
 </html>
