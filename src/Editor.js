@@ -12,10 +12,12 @@ class Editor {
    * @param {GenericAdapter} adapter
    * @param {object} options
    * @param {uploadFunc} options.upload - Called when an image need to be uploaded
+   * @param {string|boolean} options.useTabToIndent=partial - can be true, false or `partial`
    */
   constructor(adapter, options) {
     if (!adapter) throw new Error('No adapter provided');
     this.options = Object.assign({
+      useTabToIndent: 'partial',
       upload: file => new Promise(resolve =>
         setTimeout(() => resolve(URL.createObjectURL(file)), 200)
       ),
@@ -627,6 +629,11 @@ class Editor {
       return { text, line: range.start.line, range, blockquote, indentedText, listItem, cursor };
     });
 
+    if ((this.options.useTabToIndent === 'partial' && selections.length === 1
+      && cursors.length === 1 && !linesData[0].listItem.type) || (!this.options.useTabToIndent)) {
+      return false;
+    }
+
     let hasCursor = false; // Track if there was a new cursor position set
     for (const { text, line, range, blockquote, indentedText, listItem, cursor } of linesData) {
       if (cursor && selections.length === 1 && !listItem.type && !reverse) {
@@ -637,8 +644,8 @@ class Editor {
         this.adapter.setSelection(new Range(cursor));
         hasCursor = true;
       } else {
-        // The indentation to add. Negative if reverse ; 2 for lists, 4 for the rest
-        const indentAdd = (reverse ? -1 : 1) * (listItem.type ? 2 : 4);
+        // The indentation to add. Negative if reverse
+        const indentAdd = (reverse ? -4 : 4);
         // Indent the text, but never under 0
         indentedText.level = Math.max(indentedText.level + indentAdd, 0);
 

@@ -21,6 +21,9 @@ class CodeMirrorAdapter extends EventEmitter {
     this.wrapperNode = document.createElement('div');
     this.wrapperNode.appendChild(this.toolbarNode);
 
+    this.wrapperNode.className = 'editor-wrapper editor-codemirror-adapter';
+    this.toolbarNode.className = 'editor-toolbar';
+
     this.options = options;
   }
 
@@ -55,6 +58,7 @@ class CodeMirrorAdapter extends EventEmitter {
     for (const [name, action] of toolbar) {
       const button = document.createElement('button');
       button.innerText = name;
+      button.className = `editor-button editor-button-${name}`;
       button.addEventListener('click', () => this.emit('action', action));
       this.toolbarNode.appendChild(button);
     }
@@ -65,15 +69,28 @@ class CodeMirrorAdapter extends EventEmitter {
    * @param {Map.<string, object>} keymap
    */
   setKeymap(keymap) {
-    const cmKeymap = {};
-    for (const [key, action] of keymap) {
+    const cmKeymap = { fallthrough: 'default' };
+    const handler = action => () => {
       if (typeof action === 'function') {
-        cmKeymap[key] = action;
+        const result = action.call();
+        if (result === false) return codemirror.Pass;
       } else {
-        cmKeymap[key] = () => this.emit('action', action);
+        this.emit('action', action);
+      }
+    };
+
+    for (const [key, action] of keymap) {
+      cmKeymap[key] = handler(action);
+      // Remove default key behaviour
+      // Useful for keeping tab default behaviour
+      if (codemirror.keyMap.basic[key]) {
+        codemirror.keyMap.basic[key] = false;
       }
     }
-    this.cm.setOption('extraKeys', cmKeymap);
+
+    codemirror.normalizeKeyMap(cmKeymap);
+    codemirror.keyMap['zds-editor'] = cmKeymap;
+    this.cm.setOption('keyMap', 'zds-editor');
   }
 
   listSelections() {

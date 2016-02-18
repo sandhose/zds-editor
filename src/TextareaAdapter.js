@@ -23,6 +23,9 @@ class TextareaAdapter extends EventEmitter {
     this.toolbarNode = document.createElement('div');
     /** @type {HTMLDivElement} */
     this.wrapperNode = document.createElement('div');
+
+    this.wrapperNode.className = 'editor-wrapper editor-textarea-adapter';
+    this.toolbarNode.className = 'editor-toolbar';
   }
 
   /**
@@ -49,6 +52,7 @@ class TextareaAdapter extends EventEmitter {
     for (const [name, action] of toolbar) {
       const button = document.createElement('button');
       button.innerHTML = name;
+      button.className = `editor-button editor-button-${action.type}`;
       button.addEventListener('click', () => this.emit('action', action));
       this.toolbarNode.appendChild(button);
     }
@@ -83,10 +87,14 @@ class TextareaAdapter extends EventEmitter {
     if (k) keyStr += k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
 
     if (this.keymap.has(keyStr)) {
-      event.preventDefault();
       const action = this.keymap.get(keyStr);
-      if (typeof action === 'function') action();
-      else this.emit('action', action);
+      if (typeof action === 'function') {
+        const result = action.call();
+        if (result !== false) event.preventDefault();
+      } else {
+        event.preventDefault();
+        this.emit('action', action);
+      }
     }
   }
 
