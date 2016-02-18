@@ -200,7 +200,7 @@ test('CodeMirrorAdapter#setKeymap', assert => {
   keymap.set('Cmd-Ctrl-Alt-B', { action: 'boop' });
   adapter.setKeymap(keymap);
 
-  const keys = adapter.cm.getOption('extraKeys');
+  const keys = adapter.cm.getOption('keyMap');
   const handler = sinon.spy();
   adapter.on('action', handler);
 

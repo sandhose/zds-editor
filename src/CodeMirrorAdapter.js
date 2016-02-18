@@ -88,9 +88,7 @@ class CodeMirrorAdapter extends EventEmitter {
       }
     }
 
-    codemirror.normalizeKeyMap(cmKeymap);
-    codemirror.keyMap['zds-editor'] = cmKeymap;
-    this.cm.setOption('keyMap', 'zds-editor');
+    this.cm.setOption('keyMap', codemirror.normalizeKeyMap(cmKeymap));
   }
 
   listSelections() {
