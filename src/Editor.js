@@ -203,20 +203,20 @@ class Editor {
    * @return {ListItem}
    */
   getListItem(text) {
-    const match = /^([ ]*)(\*|-|[0-9]+\.) (.*)$/.exec(text);
+    const match = /^(\*|-|[0-9]+\.) (.*)$/.exec(text);
     if (match) {
-      if (match[2] === '-' || match[2] === '*') {
+      if (match[1] === '-' || match[1] === '*') {
         return {
           type: 'unordered',
-          bullet: match[2],
-          text: match[3],
+          bullet: match[1],
+          text: match[2],
         };
       }
 
       return {
         type: 'ordered',
-        text: match[3],
-        number: parseInt(match[2], 10),
+        text: match[2],
+        number: parseInt(match[1], 10),
       };
     }
 
@@ -443,6 +443,11 @@ class Editor {
     }
 
     if (level === 'heading') {
+      const indentedText = this.getIndentedText(text);
+      text = indentedText.text;
+      indentedText.text = '';
+      prefix += this.setIndentedText(indentedText);
+
       const listItem = this.getListItem(text);
       text = listItem.text;
       listItem.text = '';
