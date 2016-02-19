@@ -22,6 +22,7 @@ body {
   resize: vertical;
   background-color: #EEE;
   border-top: solid 1px #EEE;
+  transition: background-color .05s .05s;
 }
 
 .editor-wrapper > textarea:focus {
@@ -40,8 +41,28 @@ body {
   height: 30px;
 }
 
-.editor-toolbar .editor-button {
+.editor-toolbar .editor-button-wrapper {
   flex: auto;
+}
+
+.editor-toolbar .editor-toolbar-children {
+  position: relative;
+  z-index: -1;
+  border: solid 1px #CCC;
+  border-top: none;
+  opacity: 0;
+}
+
+.editor-toolbar .editor-button-wrapper:hover .editor-toolbar-children,
+.editor-toolbar .editor-button-wrapper.active .editor-toolbar-children,
+.editor-toolbar .editor-toolbar-children.active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.editor-toolbar .editor-button {
+  width: 100%;
+  height: 30px;
   background: white;
   border: none;
   font-family: monospace;

@@ -53,14 +53,34 @@ class CodeMirrorAdapter extends EventEmitter {
    * Called when the toolbar is changed
    * @param {Map.<string, object>} toolbar
    */
-  setToolbar(toolbar) {
-    this.toolbarNode.innerHTML = '';
-    for (const [name, action] of toolbar) {
+  setToolbar(toolbar, _toolbarNode = this.toolbarNode) {
+    const toolbarNode = _toolbarNode;
+    toolbarNode.innerHTML = '';
+    const focusHandler = (wrapper, action) => () => {
+      toolbarNode.classList[action]('active');
+      wrapper.classList[action]('active');
+    };
+
+    for (const [name, meta] of toolbar) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'editor-button-wrapper';
       const button = document.createElement('button');
       button.innerHTML = name;
-      button.className = `editor-button editor-button-${name}`;
-      button.addEventListener('click', () => this.emit('action', action));
-      this.toolbarNode.appendChild(button);
+      button.className = `editor-button editor-button-${meta.type}`;
+      if (meta.alt) button.title = meta.alt;
+      button.addEventListener('click', () => this.emit('action', meta));
+      button.addEventListener('focus', focusHandler(wrapper, 'add'));
+      button.addEventListener('blur', focusHandler(wrapper, 'remove'));
+      wrapper.appendChild(button);
+
+      if (meta.children && meta.children.size > 0) {
+        const childWrapper = document.createElement('div');
+        childWrapper.className = 'editor-toolbar-children';
+        this.setToolbar(meta.children, childWrapper);
+        wrapper.appendChild(childWrapper);
+      }
+
+      toolbarNode.appendChild(wrapper);
     }
   }
 

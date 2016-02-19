@@ -316,7 +316,7 @@ test('TextareaAdapter#setToolbar', assert => {
   adapter.on('action', handler);
   adapter.setToolbar(toolbar);
 
-  const buttons = adapter.toolbarNode.children;
+  const buttons = adapter.toolbarNode.querySelectorAll('.editor-button');
   assert.equal(buttons[0].innerText, 'beep', 'should append first button');
   assert.equal(buttons[1].innerText, 'boop', 'should append second button');
 

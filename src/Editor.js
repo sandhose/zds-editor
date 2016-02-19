@@ -72,14 +72,11 @@ class Editor {
   buildToolbar() {
     this.addToolbarButton({ name: 'bold', type: 'emphasis', level: 2, keymap: 'Mod-B' });
     this.addToolbarButton({ name: 'italic', type: 'emphasis', level: 1, keymap: 'Mod-I' });
-    this.addToolbarButton({ name: 'h1', type: 'heading', level: 1 });
-    this.addToolbarButton({ name: 'h2', type: 'heading', level: 2 });
-    this.addToolbarButton({ name: 'h3', type: 'heading', level: 3 });
-    this.addToolbarButton({ name: 'h4', type: 'heading', level: 4 });
-    this.addToolbarButton({ name: 'h5', type: 'heading', level: 5 });
-    this.addToolbarButton({ name: 'h6', type: 'heading', level: 6 });
-    this.addToolbarButton({ name: '+quote', type: 'blockquote', level: 1, keymap: "Mod-'" });
-    this.addToolbarButton({ name: '-quote', type: 'blockquote', level: -1, keymap: "Mod-Alt-'" });
+    this.addToolbarButton({ name: 'h1', type: 'heading', level: 1, children: [
+      { name: 'h2', level: 2 }, { name: 'h3', level: 3 }, { name: 'h4', level: 4 },
+    ] });
+    this.addToolbarButton({ name: '+quote', type: 'blockquote', level: 1, keymap: 'Mod-\'',
+                            children: [{ name: '-quote', level: -1, keymap: 'Mod-Alt-\'' }] });
     this.addToolbarButton({ name: 'code', type: 'code' });
     this.addToolbarButton({ name: 'link', type: 'link', keymap: 'Mod-K' });
   }
@@ -773,10 +770,23 @@ class Editor {
    * @example
    * editor.addToolbarButton({ name: "bold", type: "emphasis", level: 2, keymap: "Mod-B" });
    */
-  addToolbarButton({ name, type, level, keymap }) {
+  addToolbarButton({ name, type, level, keymap, children }, toolbar = this.toolbar) {
     const key = (keymap || '').replace('Mod', isOSX ? 'Cmd' : 'Ctrl');
     if (name) {
-      this.toolbar.set(name, { type, level, alt: key.replace('Cmd', '\u2318').replace('-', '+') });
+      const tbItem = {
+        type,
+        level,
+        alt: key.replace('Cmd', '\u2318').replace('-', '+'),
+        children: new Map(),
+      };
+      if (children) {
+        for (const child of children) {
+          if (!child.type) child.type = type;
+          this.addToolbarButton(child, tbItem.children);
+        }
+      }
+
+      toolbar.set(name, tbItem);
     }
 
     if (key) {
