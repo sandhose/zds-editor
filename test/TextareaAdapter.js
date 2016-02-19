@@ -321,12 +321,12 @@ test('TextareaAdapter#setToolbar', assert => {
   assert.equal(buttons[1].innerText, 'boop', 'should append second button');
 
   simulant.fire(buttons[0], 'click'); // Click first button
-  assert.ok(handler.calledWith({ action: 'beep' }),
+  assert.ok(handler.calledWith('beep'),
             'should emit action event on click on the first button');
   handler.reset();
 
   simulant.fire(buttons[1], 'click'); // Click first button
-  assert.ok(handler.calledWith({ action: 'boop' }),
+  assert.ok(handler.calledWith('boop'),
             'should emit action event on click on the second button');
   handler.reset();
 
