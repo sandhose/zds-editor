@@ -70,7 +70,8 @@ body {
   padding: 0;
 }
 
-.editor-toolbar .editor-button:focus {
+.editor-toolbar .editor-button:focus,
+.editor-toolbar .editor-button:hover {
   background: #EEE;
   outline: 0;
 }

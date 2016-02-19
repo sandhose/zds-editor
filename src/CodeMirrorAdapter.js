@@ -61,22 +61,23 @@ class CodeMirrorAdapter extends EventEmitter {
       wrapper.classList[action]('active');
     };
 
-    for (const [name, meta] of toolbar) {
+    for (const [name, { action, alt, children }] of toolbar) {
       const wrapper = document.createElement('div');
       wrapper.className = 'editor-button-wrapper';
       const button = document.createElement('button');
       button.innerHTML = name;
-      button.className = `editor-button editor-button-${meta.type}`;
-      if (meta.alt) button.title = meta.alt;
-      button.addEventListener('click', () => this.emit('action', meta));
+      button.classList.add('editor-button');
+      if (action.type) button.classList.add(`editor-button-${action.type}`);
+      if (alt) button.title = alt;
+      button.addEventListener('click', () => this.emit('action', action));
       button.addEventListener('focus', focusHandler(wrapper, 'add'));
       button.addEventListener('blur', focusHandler(wrapper, 'remove'));
       wrapper.appendChild(button);
 
-      if (meta.children && meta.children.size > 0) {
+      if (children && children.size > 0) {
         const childWrapper = document.createElement('div');
         childWrapper.className = 'editor-toolbar-children';
-        this.setToolbar(meta.children, childWrapper);
+        this.setToolbar(children, childWrapper);
         wrapper.appendChild(childWrapper);
       }
 

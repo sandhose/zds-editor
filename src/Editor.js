@@ -70,15 +70,18 @@ class Editor {
    * Build the toolbar
    */
   buildToolbar() {
-    this.addToolbarButton({ name: 'bold', type: 'emphasis', level: 2, keymap: 'Mod-B' });
-    this.addToolbarButton({ name: 'italic', type: 'emphasis', level: 1, keymap: 'Mod-I' });
-    this.addToolbarButton({ name: 'h1', type: 'heading', level: 1, children: [
-      { name: 'h2', level: 2 }, { name: 'h3', level: 3 }, { name: 'h4', level: 4 },
-    ] });
-    this.addToolbarButton({ name: '+quote', type: 'blockquote', level: 1, keymap: 'Mod-\'',
-                            children: [{ name: '-quote', level: -1, keymap: 'Mod-Alt-\'' }] });
-    this.addToolbarButton({ name: 'code', type: 'code' });
-    this.addToolbarButton({ name: 'link', type: 'link', keymap: 'Mod-K' });
+    this.addToolbarButton({ name: 'bold', action: { type: 'emphasis', level: 2 },
+                            keymap: 'Mod-B' });
+    this.addToolbarButton({ name: 'italic', action: { type: 'emphasis', level: 1 },
+                            keymap: 'Mod-I' });
+    this.addToolbarButton({ name: 'h1', action: { type: 'heading', level: 1 },
+      children: [{ name: 'h2', action: { level: 2 } }, { name: 'h3', action: { level: 3 } },
+                 { name: 'h4', action: { level: 4 } }] });
+    this.addToolbarButton({ name: '+quote', action: { type: 'blockquote', level: 1 },
+      keymap: 'Mod-\'', children: [{ name: '-quote', action: { level: -1 },
+                                     keymap: 'Mod-Alt-\'' }] });
+    this.addToolbarButton({ name: 'code', action: { type: 'code' } });
+    this.addToolbarButton({ name: 'link', action: { type: 'link' }, keymap: 'Mod-K' });
   }
 
   /**
@@ -757,6 +760,7 @@ class Editor {
       this.adapter.unlock();
       this.locked = false;
       this.mapRanges((text, range, index) => uploadURLs[index], imageLinkSelections);
+      this.adapter.focus();
     });
   }
 
@@ -764,24 +768,26 @@ class Editor {
    * Add a button to the toolbar
    * @param {object} opts
    * @param {string} opts.name - The name of the button (if empty, no button will be added)
-   * @param {string} opts.type - The type of the button (will be passed to `handleAction`)
-   * @param {} opts.level - Arbitrary level (will be passed to `handleAction`)
+   * @param {object|function} opts.action - The action of the button
    * @param {string} opts.keymap - A keymap to bind for this action
+   * @param {object[]} opts.children - An array of sub-buttons
+   * @param {Map} toolbar=this.toolbar - The toolbar where to add the buttons
    * @example
-   * editor.addToolbarButton({ name: "bold", type: "emphasis", level: 2, keymap: "Mod-B" });
+   * editor.addToolbarButton({ name: "bold", action: { type: "emphasis", level: 2 },
+   *                           keymap: "Mod-B" });
    */
-  addToolbarButton({ name, type, level, keymap, children }, toolbar = this.toolbar) {
+  addToolbarButton({ name, action, keymap, children }, toolbar = this.toolbar) {
     const key = (keymap || '').replace('Mod', isOSX ? 'Cmd' : 'Ctrl');
     if (name) {
       const tbItem = {
-        type,
-        level,
+        action,
         alt: key.replace('Cmd', '\u2318').replace('-', '+'),
         children: new Map(),
       };
+
       if (children) {
         for (const child of children) {
-          if (!child.type) child.type = type;
+          child.action = Object.assign({}, action, child.action);
           this.addToolbarButton(child, tbItem.children);
         }
       }
@@ -791,7 +797,7 @@ class Editor {
 
     if (key) {
       if (this.keymap.has(key)) throw new Error(`${key} is already registered`);
-      this.keymap.set(key, { type, level });
+      this.keymap.set(key, action);
     }
   }
 }
