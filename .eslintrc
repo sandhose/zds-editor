@@ -1,4 +1,7 @@
 {
-  "extends": "airbnb/base",
-  "newTarget": true
+  "extends": "airbnb-base",
+  "newTarget": true,
+  "env": {
+    "browser": true
+  }
 }
