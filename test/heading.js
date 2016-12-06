@@ -1,32 +1,22 @@
-'use strict';
-
 const test = require('tape');
-const { createEditor, destroyEditor } = require('./createEditor.js');
+const Editor = require('../src/Editor');
 
-test('Editor#getHeading', assert => {
+test('Editor.getHeading', (assert) => {
   assert.plan(3);
-  const ed = createEditor();
-
-  assert.deepEqual(ed.getHeading('## beep'), { level: 2, text: 'beep' },
+  assert.deepEqual(Editor.getHeading('## beep'), { level: 2, text: 'beep' },
                    'extracts heading properties');
-  assert.deepEqual(ed.getHeading('boop'), { level: 0, text: 'boop' },
+  assert.deepEqual(Editor.getHeading('boop'), { level: 0, text: 'boop' },
                    'extracts heading with level=0 when text is not a heading');
-  assert.deepEqual(ed.getHeading('#### '), { level: 4, text: '' },
+  assert.deepEqual(Editor.getHeading('#### '), { level: 4, text: '' },
                    'extracts heading where there is no text inside the heading');
-
-  destroyEditor(ed);
 });
 
-test('Editor#setHeading', assert => {
+test('Editor.setHeading', (assert) => {
   assert.plan(3);
-  const ed = createEditor();
-
-  assert.equal(ed.setHeading({ level: 2, text: 'Lorem ipsum' }), '## Lorem ipsum',
+  assert.equal(Editor.setHeading({ level: 2, text: 'Lorem ipsum' }), '## Lorem ipsum',
                'converts heading to string');
-  assert.equal(ed.setHeading({ level: 0, text: 'Doloir sit amet' }), 'Doloir sit amet',
+  assert.equal(Editor.setHeading({ level: 0, text: 'Doloir sit amet' }), 'Doloir sit amet',
                'converts heading to string with level=0');
-  assert.equal(ed.setHeading({ level: 4, text: '' }), '#### ',
+  assert.equal(Editor.setHeading({ level: 4, text: '' }), '#### ',
                'converts heading to string without text');
-
-  destroyEditor(ed);
 });

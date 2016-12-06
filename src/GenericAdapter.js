@@ -1,3 +1,4 @@
+/* eslint class-methods-use-this: "off" */
 /**
  * Adapter that does nothing (used for testing & extending)
  * @interface

@@ -1,6 +1,6 @@
-import { Pos, Range } from './util.js';
+import { Pos, Range } from './util';
 
-const isOSX = navigator && ~navigator.userAgent.indexOf('Mac OS X');
+const isOSX = typeof navigator === 'object' && (navigator.userAgent.indexOf('Mac OS X') !== -1);
 
 class Editor {
   /**
@@ -20,9 +20,9 @@ class Editor {
     if (!adapter) throw new Error('No adapter provided');
     this.options = Object.assign({
       useTabToIndent: 'partial',
-      upload: file => new Promise(resolve =>
+      upload: file => new Promise(resolve => (
         setTimeout(() => resolve(URL.createObjectURL(file)), 200)
-      ),
+      )),
     }, options);
 
     /** @type {Map.<string, object>} */
@@ -70,16 +70,35 @@ class Editor {
    * Build the toolbar
    */
   buildToolbar() {
-    this.addToolbarButton({ name: 'bold', action: { type: 'emphasis', level: 2 },
-                            keymap: 'Mod-B' });
-    this.addToolbarButton({ name: 'italic', action: { type: 'emphasis', level: 1 },
-                            keymap: 'Mod-I' });
-    this.addToolbarButton({ name: 'h1', action: { type: 'heading', level: 1 },
-      children: [{ name: 'h2', action: { level: 2 } }, { name: 'h3', action: { level: 3 } },
-                 { name: 'h4', action: { level: 4 } }] });
-    this.addToolbarButton({ name: '+quote', action: { type: 'blockquote', level: 1 },
-      keymap: 'Mod-\'', children: [{ name: '-quote', action: { level: -1 },
-                                     keymap: 'Mod-Alt-\'' }] });
+    this.addToolbarButton({
+      name: 'bold',
+      action: { type: 'emphasis', level: 2 },
+      keymap: 'Mod-B',
+    });
+    this.addToolbarButton({
+      name: 'italic',
+      action: { type: 'emphasis', level: 1 },
+      keymap: 'Mod-I',
+    });
+    this.addToolbarButton({
+      name: 'h1',
+      action: { type: 'heading', level: 1 },
+      children: [
+        { name: 'h2', action: { level: 2 } },
+        { name: 'h3', action: { level: 3 } },
+        { name: 'h4', action: { level: 4 } },
+      ],
+    });
+    this.addToolbarButton({
+      name: '+quote',
+      action: { type: 'blockquote', level: 1 },
+      keymap: 'Mod-\'',
+      children: [{
+        name: '-quote',
+        action: { level: -1 },
+        keymap: 'Mod-Alt-\'',
+      }],
+    });
     this.addToolbarButton({ name: 'code', action: { type: 'code' } });
     this.addToolbarButton({ name: 'link', action: { type: 'link' }, keymap: 'Mod-K' });
   }
@@ -96,10 +115,10 @@ class Editor {
    * @param {string} text - The text to parse
    * @return {Heading} The parsed heading
    * @example
-   * editor.getHeading("## test");
+   * Editor.getHeading("## test");
    * { level: 2, text: "test" }
    */
-  getHeading(text) {
+  static getHeading(text) {
     const match = /^(#{0,6})(.*)$/.exec(text);
     return { level: match[1].length, text: match[2].trim() };
   }
@@ -109,10 +128,10 @@ class Editor {
    * @param {Heading} heading
    * @return {string} The text representation of the heading
    * @example
-   * editor.setHeading({ level: 3, text: "Lorem ipsum"});
+   * Editor.setHeading({ level: 3, text: "Lorem ipsum"});
    * "### Lorem ipsum"
    */
-  setHeading({ level, text }) {
+  static setHeading({ level, text }) {
     return (`${'#'.repeat(level)} ${text}`).replace(/^ /, '');
   }
 
@@ -128,10 +147,10 @@ class Editor {
    * @param {string} text - The text to parse
    * @return {Blockquote} The parsed blockquote
    * @example
-   * editor.getBlockquote("> > > nested");
+   * Editor.getBlockquote("> > > nested");
    * { level: 3, text: "nested" }
    */
-  getBlockquote(text) {
+  static getBlockquote(text) {
     const match = /^((> )*)(.*)$/.exec(text);
     return { level: match[1].length / 2, text: match[3] };
   }
@@ -141,10 +160,10 @@ class Editor {
    * @param {Blockquote} blockquote
    * @return {string} The text representation of the blockquote
    * @example
-   * editor.setBlockquote({ level: 1, text: "quote" });
+   * Editor.setBlockquote({ level: 1, text: "quote" });
    * "> quote"
    */
-  setBlockquote({ level, text }) {
+  static setBlockquote({ level, text }) {
     return `${'> '.repeat(level)}${text}`;
   }
 
@@ -161,18 +180,20 @@ class Editor {
    * @param {string} text - The text to parse
    * @return {Emphasis} The parsed emphasis
    * @example
-   * editor.getEmphasis("__bold__");
+   * Editor.getEmphasis("__bold__");
    * { level: 2, text: "bold", type: "_" }
    */
-  getEmphasis(text) {
+  static getEmphasis(text) {
     const start = text.charAt(0);
     if (start !== '*' && start !== '_') return { type: '*', level: 0, text };
-    for (let i = 3; i > 0; i--) {
+    for (let i = 3; i > 0; i -= 1) {
       const match = text.match(new RegExp(`^\\${start}{${i}}(.*)\\${start}{${i}}`));
       if (match) {
         return { type: start, level: i, text: match[1] };
       }
     }
+
+    throw new Error('error while parsing emphasis'); // This should not happen
   }
 
   /**
@@ -180,10 +201,10 @@ class Editor {
    * @param {Emphasis} emphasis
    * @return {string} The text representation of the emphasis
    * @example
-   * editor.setEmphasis({ text: "italic", level: 1, type: "*" });
+   * Editor.setEmphasis({ text: "italic", level: 1, type: "*" });
    * "*italic*"
    */
-  setEmphasis({ text, level, type }) {
+  static setEmphasis({ text, level, type }) {
     return type.repeat(level) + text + type.repeat(level);
   }
 
@@ -202,7 +223,7 @@ class Editor {
    * @param {string} text - The text to parse
    * @return {ListItem}
    */
-  getListItem(text) {
+  static getListItem(text) {
     const match = /^(\*|-|[0-9]+\.) (.*)$/.exec(text);
     if (match) {
       if (match[1] === '-' || match[1] === '*') {
@@ -231,7 +252,7 @@ class Editor {
    * @param {ListItem} item
    * @return {string}
    */
-  setListItem({ text, type, number, bullet }) {
+  static setListItem({ text, type, number, bullet }) {
     if (!type) {
       return text;
     }
@@ -252,10 +273,10 @@ class Editor {
    * @param {string} text - The text to parse
    * @return {IndentedText} The parsed IndentedText
    * @example
-   * editor.getBlockquote("   code");
+   * Editor.getBlockquote("   code");
    * { level: 3, text: "code" }
    */
-  getIndentedText(text) {
+  static getIndentedText(text) {
     const match = /^( *)([^ ](.*))?$/.exec(text);
     return { level: match[1].length, text: match[2] || '' };
   }
@@ -265,10 +286,10 @@ class Editor {
    * @param {IndentedText} indentedText
    * @return {string}
    * @example
-   * editor.setIndentedText({ level: 2, text: "code" });
+   * Editor.setIndentedText({ level: 2, text: "code" });
    * "  code"
    */
-  setIndentedText({ level, text }) {
+  static setIndentedText({ level, text }) {
     return `${' '.repeat(level)}${text}`;
   }
 
@@ -287,7 +308,7 @@ class Editor {
     // Extracting lines from selections
     const lines = fullLine ? new Set() : new Map();
     selections.forEach(({ start, end }) => {
-      for (let i = start.line; i <= end.line; i++) {
+      for (let i = start.line; i <= end.line; i += 1) {
         if (fullLine) {
           lines.add(i);
         } else {
@@ -305,14 +326,14 @@ class Editor {
     if (fullLine) {
       ranges = Array.from(lines).map(line => new Range(
         new Pos({ line, ch: 0 }),
-        new Pos({ line, ch: this.adapter.getLine(line).length })
+        new Pos({ line, ch: this.adapter.getLine(line).length }),
       ));
     } else {
       ranges = Array.from(lines).map(([line, lineRanges]) =>
         lineRanges.map(([start, end]) => new Range(
           new Pos({ line, ch: start }),
-          new Pos({ line, ch: end })
-        ))
+          new Pos({ line, ch: end }),
+        )),
       ).reduce((a, b) => a.concat(b));
     }
 
@@ -325,7 +346,7 @@ class Editor {
    * @return {Range[]} The expanded selections
    */
   expandSelectionsToLines(selections = this.adapter.listSelections()) {
-    return selections.map(range => {
+    return selections.map((range) => {
       const { start, end } = range;
       start.ch = 0;
       end.ch = this.adapter.getLine(end.line).length;
@@ -364,10 +385,14 @@ class Editor {
 
       ranges.slice(index + 1).forEach((range2, i) => {
         ranges[index + 1 + i] = new Range(
-          this.adjustPosForChange(range2.start, { from: range.start, to: range.end,
-                                                 text: resultText.split('\n') }),
-          this.adjustPosForChange(range2.end, { from: range.start, to: range.end,
-                                               text: resultText.split('\n') })
+          Editor.adjustPosForChange(
+            range2.start,
+            { from: range.start, to: range.end, text: resultText.split('\n') },
+          ),
+          Editor.adjustPosForChange(
+            range2.end,
+            { from: range.start, to: range.end, text: resultText.split('\n') },
+          ),
         );
       });
 
@@ -376,23 +401,23 @@ class Editor {
       const s2 = resultText.slice(0, resultText.length - resultSelection[1]).split('\n');
       return new Range(
         new Pos({
-          line: range.start.line - 1 + s1.length,
+          line: (range.start.line - 1) + s1.length,
           ch: (s1.length > 1 ? 0 : range.start.ch) + s1[s1.length - 1].length,
         }),
         new Pos({
-          line: range.start.line - 1 + s2.length,
+          line: (range.start.line - 1) + s2.length,
           ch: (s2.length > 1 ? 0 : range.start.ch) + s2[s2.length - 1].length,
-        })
+        }),
       );
     });
     this.adapter.setSelection(...newSelections);
     return newSelections;
   }
 
-  changeEnd(change) {
+  static changeEnd(change) {
     if (!change.text) return change.to;
     return new Pos({
-      line: change.from.line + change.text.length - 1,
+      line: (change.from.line + change.text.length) - 1,
       ch: change.text[change.text.length - 1].length
           + (change.text.length === 1 ? change.from.ch : 0),
     });
@@ -406,14 +431,14 @@ class Editor {
    * @param {Pos} change.to - End of the change
    * @param {string} change.text - New text for the change
    */
-  adjustPosForChange(pos, { from, to, text }) {
+  static adjustPosForChange(pos, { from, to, text }) {
     if (Pos.compare(pos, from) < 0) return pos;
-    if (Pos.compare(pos, to) <= 0) return this.changeEnd({ from, to, text });
+    if (Pos.compare(pos, to) <= 0) return Editor.changeEnd({ from, to, text });
 
     let ch = pos.ch;
-    if (pos.line === to.line) ch += this.changeEnd({ from, to, text }).ch - to.ch;
+    if (pos.line === to.line) ch += Editor.changeEnd({ from, to, text }).ch - to.ch;
     return new Pos({
-      line: pos.line + text.length - (to.line - from.line) - 1,
+      line: (pos.line + text.length) - (to.line - from.line) - 1,
       ch,
     });
   }
@@ -431,32 +456,32 @@ class Editor {
    * @param {string} level - Level of the block to extract ; can be `cite` or `heading`
    * @return {Prefix}
    */
-  getPrefixForText(_text, level) {
+  static getPrefixForText(_text, level) {
     let prefix = '';
     let text = _text;
 
     if (level === 'cite' || level === 'heading') {
-      const quote = this.getBlockquote(text);
+      const quote = Editor.getBlockquote(text);
       text = quote.text;
       quote.text = '';
-      prefix += this.setBlockquote(quote);
+      prefix += Editor.setBlockquote(quote);
     }
 
     if (level === 'heading') {
-      const indentedText = this.getIndentedText(text);
+      const indentedText = Editor.getIndentedText(text);
       text = indentedText.text;
       indentedText.text = '';
-      prefix += this.setIndentedText(indentedText);
+      prefix += Editor.setIndentedText(indentedText);
 
-      const listItem = this.getListItem(text);
+      const listItem = Editor.getListItem(text);
       text = listItem.text;
       listItem.text = '';
-      prefix += this.setListItem(listItem);
+      prefix += Editor.setListItem(listItem);
 
-      const heading = this.getHeading(text);
+      const heading = Editor.getHeading(text);
       text = heading.text;
       heading.text = '';
-      prefix += this.setHeading(heading);
+      prefix += Editor.setHeading(heading);
     }
 
     return { text, prefix };
@@ -474,10 +499,10 @@ class Editor {
     if (this.locked) return;
     if (type === 'emphasis') {
       const ranges = this.extractLines(this.adapter.listSelections());
-      this.mapRanges(text => {
-        const { prefix, text: unprefixedText } = this.getPrefixForText(text, 'heading');
-        const emph = this.getEmphasis(unprefixedText);
-        if ((emph.level >> (level - 1)) % 2 === 1) emph.level -= level;
+      this.mapRanges((text) => {
+        const { prefix, text: unprefixedText } = Editor.getPrefixForText(text, 'heading');
+        const emph = Editor.getEmphasis(unprefixedText);
+        if (emph.level === 3 || emph.level === level) emph.level -= level;
         else emph.level += level;
 
         if (emph.text === '') {
@@ -488,15 +513,15 @@ class Editor {
         }
 
         return {
-          text: prefix + this.setEmphasis(emph),
+          text: prefix + Editor.setEmphasis(emph),
           selection: [prefix.length, 0],
         };
       }, ranges);
     } else if (type === 'heading') {
       const ranges = this.extractLines(this.adapter.listSelections(), true);
-      this.mapRanges(text => {
-        const { prefix, text: unprefixedText } = this.getPrefixForText(text, 'cite');
-        const heading = this.getHeading(unprefixedText);
+      this.mapRanges((text) => {
+        const { prefix, text: unprefixedText } = Editor.getPrefixForText(text, 'cite');
+        const heading = Editor.getHeading(unprefixedText);
         if (heading.level === level) heading.level = 0; // Toggle heading if same level
         else heading.level = level;
         if (heading.text === '') {
@@ -506,24 +531,24 @@ class Editor {
           };
         }
         return {
-          text: prefix + this.setHeading(heading),
+          text: prefix + Editor.setHeading(heading),
           selection: [prefix.length, 0],
         };
       }, ranges);
     } else if (type === 'blockquote') {
       const ranges = this.extractLines(this.adapter.listSelections(), true);
-      this.mapRanges(text => {
-        const quote = this.getBlockquote(text);
+      this.mapRanges((text) => {
+        const quote = Editor.getBlockquote(text);
         quote.level = Math.max(0, quote.level + level);
         if (quote.text === '') {
           return { text: '> '.repeat(quote.level), selection: [quote.level * 2, 0] };
         }
 
-        return this.setBlockquote(quote);
+        return Editor.setBlockquote(quote);
       }, ranges);
     } else if (type === 'code') {
       const ranges = this.expandSelectionsToLines();
-      this.mapRanges(text => {
+      this.mapRanges((text) => {
         let returnValue;
         if (text.trim() === '') {
           returnValue = {
@@ -539,9 +564,9 @@ class Editor {
         return returnValue;
       }, ranges);
     } else if (type === 'link') {
-      const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
       const ranges = this.extractLines(this.adapter.listSelections());
-      this.mapRanges(text => {
+      this.mapRanges((text) => {
         let returnValue;
         if (text === '' || text.match(urlRegex)) {
           returnValue = {
@@ -570,14 +595,14 @@ class Editor {
     // Do those weird stuff only when there is a single cursor (no selection)
     if (selections.length === 1 && Pos.compare(selections[0].start, selections[0].end) === 0) {
       const cursor = selections[0].start;
-      const blockquote = this.getBlockquote(this.adapter.getLine(cursor.line));
-      const indentedText = this.getIndentedText(blockquote.text);
-      const listItem = this.getListItem(indentedText.text);
+      const blockquote = Editor.getBlockquote(this.adapter.getLine(cursor.line));
+      const indentedText = Editor.getIndentedText(blockquote.text);
+      const listItem = Editor.getListItem(indentedText.text);
 
       // Previous line information
-      const prevBlockquote = this.getBlockquote(this.adapter.getLine(cursor.line - 1));
-      const prevIndentedText = this.getIndentedText(prevBlockquote.text);
-      const prevListItem = this.getListItem(prevIndentedText.text);
+      const prevBlockquote = Editor.getBlockquote(this.adapter.getLine(cursor.line - 1));
+      const prevIndentedText = Editor.getIndentedText(prevBlockquote.text);
+      const prevListItem = Editor.getListItem(prevIndentedText.text);
 
       if (blockquote.level === 0 && indentedText.level === 0 && !listItem.type) {
         // Nothing special on this line, let's act like a normal carriage return
@@ -592,20 +617,26 @@ class Editor {
         // This line has an empty list item OR an empty indented text
         // Let's only keep the Blockquote on this line and on the next
         blockquote.text = '';
-        const quoteText = this.setBlockquote(blockquote);
-        this.mapRanges(() => ({ text: `${quoteText}\n${quoteText}`,
-                                selection: [1 + quoteText.length * 2, 0] }),
-                       this.expandSelectionsToLines([new Range(cursor, cursor)]));
+        const quoteText = Editor.setBlockquote(blockquote);
+        this.mapRanges(
+          () => ({
+            text: `${quoteText}\n${quoteText}`,
+            selection: [1 + (quoteText.length * 2), 0],
+          }),
+          this.expandSelectionsToLines([new Range(cursor, cursor)]),
+        );
       } else {
         // There is a non-empty ListItem OR non-empty Blockquote OR non-empty IndentedText
         // Let's keep those properties for the next line
-        if (listItem.type === 'ordered') listItem.number++;
+        if (listItem.type === 'ordered') listItem.number += 1;
         listItem.text = '';
-        indentedText.text = this.setListItem(listItem);
-        blockquote.text = this.setIndentedText(indentedText);
-        const newText = this.setBlockquote(blockquote);
-        this.mapRanges(() => ({ text: `\n${newText}`, selection: [newText.length + 1, 0] }),
-                       [new Range(cursor, cursor)]);
+        indentedText.text = Editor.setListItem(listItem);
+        blockquote.text = Editor.setIndentedText(indentedText);
+        const newText = Editor.setBlockquote(blockquote);
+        this.mapRanges(
+          () => ({ text: `\n${newText}`, selection: [newText.length + 1, 0] }),
+          [new Range(cursor, cursor)],
+        );
       }
     } else {
       this.mapRanges(() => ({ text: '\n', selection: [1, 0] }), selections);
@@ -622,11 +653,11 @@ class Editor {
                               .map(({ start }) => start);
     const lines = this.extractLines(selections, true);
     // First, extract all the informations we can get from the line
-    const linesData = lines.map(range => {
+    const linesData = lines.map((range) => {
       const text = this.adapter.getRange(range);
-      const blockquote = this.getBlockquote(text);
-      const indentedText = this.getIndentedText(blockquote.text);
-      const listItem = this.getListItem(indentedText.text);
+      const blockquote = Editor.getBlockquote(text);
+      const indentedText = Editor.getIndentedText(blockquote.text);
+      const listItem = Editor.getListItem(indentedText.text);
       const cursor = cursors.find(pos => Pos.compare(pos, range.start) >= 0
                                       && Pos.compare(pos, range.end) <= 0);
       return { text, line: range.start.line, range, blockquote, indentedText, listItem, cursor };
@@ -638,60 +669,74 @@ class Editor {
     }
 
     let hasCursor = false; // Track if there was a new cursor position set
-    for (const { text, line, range, blockquote, indentedText, listItem, cursor } of linesData) {
+    linesData.forEach(({ text, line, range, blockquote, indentedText, listItem, cursor }) => {
       if (cursor && selections.length === 1 && !listItem.type && !reverse) {
         // In case it was a tab without selection not on a list, do smart-indent on cursor
         const shift = 4 - (cursor.ch % 4); // Smart-indent
         this.adapter.replaceRange(' '.repeat(shift), new Range(cursor));
-        cursor.ch += shift; // Shift the cursor
-        this.adapter.setSelection(new Range(cursor));
+        this.adapter.setSelection(new Range({ ...cursor, ch: cursor.ch + shift }));
         hasCursor = true;
       } else {
         // The indentation to add. Negative if reverse
         const indentAdd = (reverse ? -4 : 4);
         // Indent the text, but never under 0
-        indentedText.level = Math.max(indentedText.level + indentAdd, 0);
+        const newIndentedText = {
+          ...indentedText,
+          level: Math.max(indentedText.level + indentAdd, 0), // Shift indentation
+        };
 
-        listItem.number = 1; // Reset ordered list number
+        const newListItem = {
+          ...listItem,
+          number: 1, // Reset ordered list number
+        };
+
         // Lets check on the previous lines if we already have a list item with the same indent
         // so we can use its type, and eventually its number
         let parentMetYet = false;
-        for (let i = line - 1; i >= 0; i--) {
-          const prevBlockquote = this.getBlockquote(this.adapter.getLine(i));
-          const prevIndentedText = this.getIndentedText(prevBlockquote.text);
-          const prevListItem = this.getListItem(prevIndentedText.text);
+        for (let i = line - 1; i >= 0; i -= 1) {
+          const prevBlockquote = Editor.getBlockquote(this.adapter.getLine(i));
+          const prevIndentedText = Editor.getIndentedText(prevBlockquote.text);
+          const prevListItem = Editor.getListItem(prevIndentedText.text);
+
           if (prevListItem.type === null) break; // We are outside the list
-          else if (prevIndentedText.level === indentedText.level
+          else if (prevIndentedText.level === newIndentedText.level
              && prevBlockquote.level === blockquote.level) {
             // We found a list item that matches the indent ; let's copy his type
-            listItem.type = prevListItem.type;
-            listItem.bullet = prevListItem.bullet;
-            if (!parentMetYet) listItem.number = Math.max(1, prevListItem.number + 1);
+            newListItem.type = prevListItem.type;
+            newListItem.bullet = prevListItem.bullet;
+            if (!parentMetYet) newListItem.number = Math.max(1, prevListItem.number + 1);
             break;
-          } else if (prevIndentedText.level < indentedText.level) {
+          } else if (prevIndentedText.level < newIndentedText.level) {
             parentMetYet = true;
           }
         }
 
         // Rebuild the line based on the modifications
-        indentedText.text = this.setListItem(listItem);
-        blockquote.text = this.setIndentedText(indentedText);
-        const newText = this.setBlockquote(blockquote);
+        newIndentedText.text = Editor.setListItem(newListItem);
+        const newBlockquote = {
+          ...blockquote,
+          text: Editor.setIndentedText(newIndentedText),
+        };
+        const newText = Editor.setBlockquote(newBlockquote);
         this.adapter.replaceRange(newText, range);
 
         // If the list item is empty, set the cursor position at the end of the list item
         if (listItem.text === '' && cursor && selections.length === 1) {
-          cursor.ch += (newText.length - text.length);
-          this.adapter.setSelection(new Range(cursor));
+          this.adapter.setSelection(new Range({
+            ...cursor,
+            ch: cursor.ch + (newText.length - text.length),
+          }));
           hasCursor = true;
         }
       }
-    }
+    });
 
     if (!hasCursor) {
       // No cursor position were set, let's select every affected lines
       this.adapter.setSelection(...this.expandSelectionsToLines(selections));
     }
+
+    return true;
   }
 
   /**
@@ -699,7 +744,7 @@ class Editor {
    * @param {Event} event
    */
   handlePaste(event) {
-    if (this.locked) return false;
+    if (this.locked) return;
     const files = Array.from(event.clipboardData.items)
       .filter(item => item.type.match(/^image\//))
       .map(item => item.getAsFile());
@@ -714,7 +759,7 @@ class Editor {
    * @param {Event} event
    */
   handleDrop(event) {
-    if (this.locked) return false;
+    if (this.locked) return;
     const files = Array.from(event.dataTransfer.files).filter(item => item.type.match(/^image\//));
     if (files.length) {
       this.uploadImages(files);
@@ -738,7 +783,7 @@ class Editor {
         text = ` ![${title}](Uploading...)`;
         selections.push(new Range(
           selections[selections.length - 1].end,
-          selections[selections.length - 1].end
+          selections[selections.length - 1].end,
         ));
       }
 
@@ -755,8 +800,8 @@ class Editor {
 
     Promise.all(files.map(file =>
       this.options.upload(file)
-          .then(url => url, error => `error while uploading ${error}`) // Silently catch errors
-    )).then(uploadURLs => {
+          .then(url => url, error => `error while uploading ${error}`), // Silently catch errors
+    )).then((uploadURLs) => {
       this.adapter.unlock();
       this.locked = false;
       this.mapRanges((text, range, index) => uploadURLs[index], imageLinkSelections);
@@ -786,10 +831,9 @@ class Editor {
       };
 
       if (children) {
-        for (const child of children) {
-          child.action = Object.assign({}, action, child.action);
-          this.addToolbarButton(child, tbItem.children);
-        }
+        children.forEach(child => (
+          this.addToolbarButton(Object.assign({}, action, child.action), tbItem.children)
+        ));
       }
 
       toolbar.set(name, tbItem);

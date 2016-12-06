@@ -1,9 +1,7 @@
-'use strict';
-
 const test = require('tape');
 const { Pos, Range } = require('../src/util');
 
-test('new Pos()', assert => {
+test('new Pos()', (assert) => {
   assert.plan(8);
   assert.throws(() => new Pos(), 'should throw if line and ch are not defined');
   assert.throws(() => new Pos({ line: 0 }), 'should throw if ch is not defined');
@@ -19,7 +17,7 @@ test('new Pos()', assert => {
   assert.equal(pos.ch, 12, 'has ch property');
 });
 
-test('Pos.compare', assert => {
+test('Pos.compare', (assert) => {
   const pos1 = new Pos({ line: 1, ch: 4 });
   const pos2 = new Pos({ line: 1, ch: 8 });
   const pos3 = new Pos({ line: 2, ch: 3 });
@@ -31,7 +29,7 @@ test('Pos.compare', assert => {
   assert.equal(Pos.compare(pos1, pos1), 0, 'is equal to 0 if a equal to b');
 });
 
-test('Pos.sort', assert => {
+test('Pos.sort', (assert) => {
   const pos1 = new Pos({ line: 1, ch: 4 });
   const pos2 = new Pos({ line: 1, ch: 8 });
   const pos3 = new Pos({ line: 2, ch: 3 });
@@ -46,7 +44,7 @@ test('Pos.sort', assert => {
                    'sorts an array of unordered non-unique positions');
 });
 
-test('new Range()', assert => {
+test('new Range()', (assert) => {
   assert.plan(6);
   assert.throws(() => new Range(), 'should throw if no start & end are defined');
   assert.throws(() => new Range('beep', 'boop'), 'should throw if start or end are not Pos');
@@ -63,7 +61,7 @@ test('new Range()', assert => {
                    'has the same start and end property if no end was provided');
 });
 
-test('Range#toCmRange', assert => {
+test('Range#toCmRange', (assert) => {
   assert.plan(1);
   const pos1 = new Pos({ line: 1, ch: 4 });
   const pos2 = new Pos({ line: 1, ch: 8 });
@@ -71,7 +69,7 @@ test('Range#toCmRange', assert => {
                    'transforms to codemirror\'s range');
 });
 
-test('Range.fromCmRange', assert => {
+test('Range.fromCmRange', (assert) => {
   assert.plan(2);
   const pos1 = new Pos({ line: 1, ch: 4 });
   const pos2 = new Pos({ line: 1, ch: 8 });

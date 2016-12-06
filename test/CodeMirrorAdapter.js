@@ -5,7 +5,7 @@ const simulant = require('simulant');
 const CodeMirrorAdapter = require('../src/CodeMirrorAdapter.js');
 const { Range, Pos } = require('../src/util');
 
-test('new CodeMirrorAdapter()', assert => {
+test('new CodeMirrorAdapter()', (assert) => {
   assert.throws(() => new CodeMirrorAdapter(), 'throws when no textarea is provided');
   assert.throws(() => new CodeMirrorAdapter('beep'), 'throws when argument is not a DOMNode');
   assert.throws(() => new CodeMirrorAdapter(document.createElement('div')),
@@ -15,7 +15,7 @@ test('new CodeMirrorAdapter()', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#attach', assert => {
+test('CodeMirrorAdapter#attach', (assert) => {
   const container = document.createElement('div');
   const textarea = document.createElement('textarea');
   container.appendChild(textarea);
@@ -32,7 +32,7 @@ test('CodeMirrorAdapter#attach', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#getText', assert => {
+test('CodeMirrorAdapter#getText', (assert) => {
   const textarea = document.createElement('textarea');
   textarea.value = 'beep boop';
 
@@ -44,7 +44,7 @@ test('CodeMirrorAdapter#getText', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#setText', assert => {
+test('CodeMirrorAdapter#setText', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -58,7 +58,7 @@ test('CodeMirrorAdapter#setText', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#listSelections', assert => {
+test('CodeMirrorAdapter#listSelections', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -68,14 +68,14 @@ test('CodeMirrorAdapter#listSelections', assert => {
   adapter.cm.setSelection({ line: 1, ch: 2 }, { line: 0, ch: 2 });
   assert.deepEqual(adapter.listSelections(), [new Range(
     new Pos({ line: 0, ch: 2 }),
-    new Pos({ line: 1, ch: 2 })
+    new Pos({ line: 1, ch: 2 }),
   )], 'returns an array with a Range with the selection');
 
   adapter.destroy();
   assert.end();
 });
 
-test('CodeMirrorAdapter#focus', assert => {
+test('CodeMirrorAdapter#focus', (assert) => {
   const textarea = document.createElement('textarea');
   document.body.appendChild(textarea);
   const adapter = new CodeMirrorAdapter(textarea);
@@ -93,24 +93,24 @@ test('CodeMirrorAdapter#focus', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#getRange', assert => {
+test('CodeMirrorAdapter#getRange', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
 
   adapter.setText('beep\nboop');
   assert.equal(adapter.getRange(new Range(
-    new Pos({ line: 0, ch: 0 }), new Pos({ line: 0, ch: 4 })
+    new Pos({ line: 0, ch: 0 }), new Pos({ line: 0, ch: 4 }),
   )), 'beep', 'returns the text of a whole line');
   assert.equal(adapter.getRange(new Range(
-    new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 2 })
+    new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 2 }),
   )), 'ep\nbo', 'returns the text of a multi-line range');
 
   adapter.destroy();
   assert.end();
 });
 
-test('CodeMirrorAdapter#replaceRange', assert => {
+test('CodeMirrorAdapter#replaceRange', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -119,8 +119,8 @@ test('CodeMirrorAdapter#replaceRange', assert => {
   adapter.replaceRange('oo', new Range(new Pos({ line: 0, ch: 1 }), new Pos({ line: 0, ch: 3 })));
   assert.equal(adapter.getText(), 'boop', 'should replace a single-line range');
 
-  adapter.setText('be like a while(1)' + '\n'
-                + 'an infinite loop');
+  adapter.setText(`be like a while(1)
+an infinite loop`);
   adapter.replaceRange('ep bo', new Range(new Pos({ line: 0, ch: 2 }),
                                           new Pos({ line: 1, ch: 14 })));
   assert.equal(adapter.getText(), 'beep boop', 'should replace a multi-line range');
@@ -129,7 +129,7 @@ test('CodeMirrorAdapter#replaceRange', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#setSelection', assert => {
+test('CodeMirrorAdapter#setSelection', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -151,7 +151,7 @@ test('CodeMirrorAdapter#setSelection', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#getLine', assert => {
+test('CodeMirrorAdapter#getLine', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -164,7 +164,7 @@ test('CodeMirrorAdapter#getLine', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#lock', assert => {
+test('CodeMirrorAdapter#lock', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -177,7 +177,7 @@ test('CodeMirrorAdapter#lock', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#unlock', assert => {
+test('CodeMirrorAdapter#unlock', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea, { codemirror: { readOnly: true } });
   adapter.attach();
@@ -190,7 +190,7 @@ test('CodeMirrorAdapter#unlock', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#setKeymap', assert => {
+test('CodeMirrorAdapter#setKeymap', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -218,7 +218,7 @@ test('CodeMirrorAdapter#setKeymap', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#setToolbar', assert => {
+test('CodeMirrorAdapter#setToolbar', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -249,7 +249,7 @@ test('CodeMirrorAdapter#setToolbar', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#on paste', assert => {
+test('CodeMirrorAdapter#on paste', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -265,7 +265,7 @@ test('CodeMirrorAdapter#on paste', assert => {
   assert.end();
 });
 
-test('CodeMirrorAdapter#on drop', assert => {
+test('CodeMirrorAdapter#on drop', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();

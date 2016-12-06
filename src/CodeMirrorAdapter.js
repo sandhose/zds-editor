@@ -61,7 +61,7 @@ class CodeMirrorAdapter extends EventEmitter {
       wrapper.classList[action]('active');
     };
 
-    for (const [name, { action, alt, children }] of toolbar) {
+    toolbar.forEach(({ action, alt, children }, name) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'editor-button-wrapper';
       const button = document.createElement('button');
@@ -82,7 +82,7 @@ class CodeMirrorAdapter extends EventEmitter {
       }
 
       toolbarNode.appendChild(wrapper);
-    }
+    });
   }
 
   /**
@@ -98,16 +98,17 @@ class CodeMirrorAdapter extends EventEmitter {
       } else {
         this.emit('action', action);
       }
+      return false;
     };
 
-    for (const [key, action] of keymap) {
+    keymap.forEach((action, key) => {
       cmKeymap[key] = handler(action);
       // Remove default key behaviour
       // Useful for keeping tab default behaviour
       if (codemirror.keyMap.basic[key]) {
         codemirror.keyMap.basic[key] = false;
       }
-    }
+    });
 
     this.cm.setOption('keyMap', codemirror.normalizeKeyMap(cmKeymap));
   }
@@ -129,14 +130,14 @@ class CodeMirrorAdapter extends EventEmitter {
   }
 
   setSelection(...selections) {
-    const _selections = selections.map(sel => {
-      if (sel.hasOwnProperty('start')) {
+    const mappedSelections = selections.map((sel) => {
+      if (typeof sel.start !== 'undefined') {
         return { anchor: sel.start, head: sel.end };
       }
       return { anchor: sel };
     });
 
-    this.cm.setSelections(_selections);
+    this.cm.setSelections(mappedSelections);
   }
 
   getLine(line) {

@@ -38,12 +38,15 @@ class TextareaAdapter extends EventEmitter {
     this.wrapperNode.appendChild(this.toolbarNode);
     this.wrapperNode.appendChild(this.textareaNode);
 
-    this._keydownHandler = e => this.handleKeydown(e);
-    this._pasteHandler = e => this.emit('paste', e);
-    this._dropHandler = e => this.emit('drop', e);
-    this.textareaNode.addEventListener('keydown', this._keydownHandler);
-    this.textareaNode.addEventListener('paste', this._pasteHandler);
-    this.textareaNode.addEventListener('drop', this._dropHandler);
+    this.handlers = {
+      keydown: e => this.handleKeydown(e),
+      paste: e => this.emit('paste', e),
+      drop: e => this.emit('drop', e),
+    };
+
+    this.textareaNode.addEventListener('keydown', this.handlers.keydown);
+    this.textareaNode.addEventListener('paste', this.handlers.paste);
+    this.textareaNode.addEventListener('drop', this.handlers.drop);
   }
 
   /**
@@ -58,7 +61,7 @@ class TextareaAdapter extends EventEmitter {
       wrapper.classList[action]('active');
     };
 
-    for (const [name, { action, alt, children }] of toolbar) {
+    toolbar.forEach(({ action, alt, children }, name) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'editor-button-wrapper';
       const button = document.createElement('button');
@@ -79,7 +82,7 @@ class TextareaAdapter extends EventEmitter {
       }
 
       toolbarNode.appendChild(wrapper);
-    }
+    });
   }
 
   /**
@@ -95,7 +98,6 @@ class TextareaAdapter extends EventEmitter {
    * @param {KeyboardEvent} event
    */
   handleKeydown(event) {
-    let keyStr = '';
     const modifiers = [
       { name: 'Cmd', key: 'metaKey' },
       { name: 'Ctrl', key: 'ctrlKey' },
@@ -103,9 +105,7 @@ class TextareaAdapter extends EventEmitter {
       { name: 'Alt', key: 'altKey' },
     ];
 
-    for (const { name, key } of modifiers) {
-      if (event[key]) keyStr += `${name}-`;
-    }
+    let keyStr = modifiers.reduce((str, { name, key }) => (event[key] ? `${str}${name}-` : str), '');
 
     const k = keycode(event);
     if (k) keyStr += k.charAt(0).toUpperCase() + k.slice(1).toLowerCase();
@@ -138,7 +138,7 @@ class TextareaAdapter extends EventEmitter {
   getPosFromIndex(index) {
     const text = this.getLines();
     let charsBefore = 0;
-    for (const i in text) {
+    for (let i = 0; i < text.length; i += 1) {
       if (charsBefore + text[i].length + 1 > index) {
         return new Pos({
           line: parseInt(i, 10),
@@ -164,7 +164,7 @@ class TextareaAdapter extends EventEmitter {
   getIndexFromPos(pos) {
     const text = this.getLines();
     let n = 0;
-    for (let i = 0; i < pos.line; i++) {
+    for (let i = 0; i < pos.line; i += 1) {
       n += text[i].length + 1;
     }
     return n + pos.ch;
@@ -173,7 +173,7 @@ class TextareaAdapter extends EventEmitter {
   listSelections() {
     return [new Range(
       this.getPosFromIndex(this.textareaNode.selectionStart || 0),
-      this.getPosFromIndex(this.textareaNode.selectionEnd || 0)
+      this.getPosFromIndex(this.textareaNode.selectionEnd || 0),
     )];
   }
 
@@ -205,7 +205,7 @@ class TextareaAdapter extends EventEmitter {
   setSelection(range) {
     this.textareaNode.setSelectionRange(
       this.getIndexFromPos(range.start),
-      this.getIndexFromPos(range.end)
+      this.getIndexFromPos(range.end),
     );
   }
 
@@ -235,9 +235,9 @@ class TextareaAdapter extends EventEmitter {
   destroy() {
     this.removeAllListeners();
 
-    this.textareaNode.removeEventListener('keydown', this._keydownHandler);
-    this.textareaNode.removeEventListener('paste', this._pasteHandler);
-    this.textareaNode.removeEventListener('drop', this._dropHandler);
+    this.textareaNode.removeEventListener('keydown', this.handlers.keydown);
+    this.textareaNode.removeEventListener('paste', this.handlers.paste);
+    this.textareaNode.removeEventListener('drop', this.handlers.drop);
 
     this.wrapperNode.removeChild(this.textareaNode);
     this.wrapperNode.removeChild(this.toolbarNode);

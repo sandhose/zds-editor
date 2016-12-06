@@ -1,32 +1,23 @@
-'use strict';
+import Editor from '../src/Editor';
 
 const test = require('tape');
-const { createEditor, destroyEditor } = require('./createEditor.js');
 
-test('Editor#getBlockquote', assert => {
+test('Editor.getBlockquote', (assert) => {
   assert.plan(3);
-  const ed = createEditor();
-
-  assert.deepEqual(ed.getBlockquote('> > beep'), { level: 2, text: 'beep' },
+  assert.deepEqual(Editor.getBlockquote('> > beep'), { level: 2, text: 'beep' },
                    'extracts quote properties');
-  assert.deepEqual(ed.getBlockquote('boop'), { level: 0, text: 'boop' },
+  assert.deepEqual(Editor.getBlockquote('boop'), { level: 0, text: 'boop' },
                    'extracts quote with level=0 when text is not a quote');
-  assert.deepEqual(ed.getBlockquote('> > > '), { level: 3, text: '' },
+  assert.deepEqual(Editor.getBlockquote('> > > '), { level: 3, text: '' },
                    'extracts quote when there is no text inside the quote');
-
-  destroyEditor(ed);
 });
 
-test('Editor#setHeading', assert => {
+test('Editor.setBlockquote', (assert) => {
   assert.plan(3);
-  const ed = createEditor();
-
-  assert.equal(ed.setBlockquote({ level: 2, text: 'beep' }), '> > beep',
+  assert.equal(Editor.setBlockquote({ level: 2, text: 'beep' }), '> > beep',
                'converts quote to string');
-  assert.equal(ed.setHeading({ level: 0, text: 'Doloir sit amet' }), 'Doloir sit amet',
+  assert.equal(Editor.setHeading({ level: 0, text: 'Doloir sit amet' }), 'Doloir sit amet',
                'converts quote to string with level=0');
-  assert.equal(ed.setHeading({ level: 4, text: '' }), '#### ',
+  assert.equal(Editor.setHeading({ level: 4, text: '' }), '#### ',
                'converts quote to string without text');
-
-  destroyEditor(ed);
 });

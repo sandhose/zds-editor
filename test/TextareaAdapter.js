@@ -6,7 +6,7 @@ const keycode = require('keycode');
 const TextareaAdapter = require('../src/TextareaAdapter');
 const { Pos, Range } = require('../src/util');
 
-test('new TextareaAdapter()', assert => {
+test('new TextareaAdapter()', (assert) => {
   assert.throws(() => new TextareaAdapter(), 'throws when no textarea is provided');
   assert.throws(() => new TextareaAdapter('beep'), 'throws when argument is not a DOMNode');
   assert.throws(() => new TextareaAdapter(document.createElement('div')),
@@ -16,7 +16,7 @@ test('new TextareaAdapter()', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#attach', assert => {
+test('TextareaAdapter#attach', (assert) => {
   const container = document.createElement('div');
   const textarea = document.createElement('textarea');
   container.appendChild(textarea);
@@ -33,7 +33,7 @@ test('TextareaAdapter#attach', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#destroy', assert => {
+test('TextareaAdapter#destroy', (assert) => {
   const container = document.createElement('div');
   const textarea = document.createElement('textarea');
   container.appendChild(textarea);
@@ -49,7 +49,7 @@ test('TextareaAdapter#destroy', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#getText', assert => {
+test('TextareaAdapter#getText', (assert) => {
   const textarea = document.createElement('textarea');
   textarea.value = 'beep boop';
 
@@ -61,7 +61,7 @@ test('TextareaAdapter#getText', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#setText', assert => {
+test('TextareaAdapter#setText', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -75,7 +75,7 @@ test('TextareaAdapter#setText', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#getLines', assert => {
+test('TextareaAdapter#getLines', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -90,7 +90,7 @@ test('TextareaAdapter#getLines', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#getPosFromIndex', assert => {
+test('TextareaAdapter#getPosFromIndex', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -109,7 +109,7 @@ test('TextareaAdapter#getPosFromIndex', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#getIndexFromPos', assert => {
+test('TextareaAdapter#getIndexFromPos', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -128,7 +128,7 @@ test('TextareaAdapter#getIndexFromPos', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#listSelections', assert => {
+test('TextareaAdapter#listSelections', (assert) => {
   const textarea = document.createElement('textarea');
   document.body.appendChild(textarea);
   const adapter = new TextareaAdapter(textarea);
@@ -139,7 +139,7 @@ test('TextareaAdapter#listSelections', assert => {
   textarea.setSelectionRange(2, 7);
   assert.deepEqual(adapter.listSelections(), [new Range(
     new Pos({ line: 0, ch: 2 }),
-    new Pos({ line: 1, ch: 2 })
+    new Pos({ line: 1, ch: 2 }),
   )], 'returns an array with a Range with the selection');
 
   adapter.destroy();
@@ -147,7 +147,7 @@ test('TextareaAdapter#listSelections', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#focus', assert => {
+test('TextareaAdapter#focus', (assert) => {
   const textarea = document.createElement('textarea');
   document.body.appendChild(textarea);
   const adapter = new TextareaAdapter(textarea);
@@ -164,24 +164,24 @@ test('TextareaAdapter#focus', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#getRange', assert => {
+test('TextareaAdapter#getRange', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
 
   adapter.setText('beep\nboop');
   assert.equal(adapter.getRange(new Range(
-    new Pos({ line: 0, ch: 0 }), new Pos({ line: 0, ch: 4 })
+    new Pos({ line: 0, ch: 0 }), new Pos({ line: 0, ch: 4 }),
   )), 'beep', 'returns the text of a whole line');
   assert.equal(adapter.getRange(new Range(
-    new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 2 })
+    new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 2 }),
   )), 'ep\nbo', 'returns the text of a multi-line range');
 
   adapter.destroy();
   assert.end();
 });
 
-test('TextareaAdapter#replaceRange', assert => {
+test('TextareaAdapter#replaceRange', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -190,8 +190,8 @@ test('TextareaAdapter#replaceRange', assert => {
   adapter.replaceRange('oo', new Range(new Pos({ line: 0, ch: 1 }), new Pos({ line: 0, ch: 3 })));
   assert.equal(adapter.getText(), 'boop', 'should replace a single-line range');
 
-  adapter.setText('be like a while(1)' + '\n'
-                + 'an infinite loop');
+  adapter.setText(`be like a while(1)
+an infinite loop`);
   adapter.replaceRange('ep bo', new Range(new Pos({ line: 0, ch: 2 }),
                                           new Pos({ line: 1, ch: 14 })));
   assert.equal(adapter.getText(), 'beep boop', 'should replace a multi-line range');
@@ -200,7 +200,7 @@ test('TextareaAdapter#replaceRange', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#setSelection', assert => {
+test('TextareaAdapter#setSelection', (assert) => {
   const textarea = document.createElement('textarea');
   document.body.appendChild(textarea);
   const adapter = new TextareaAdapter(textarea);
@@ -217,7 +217,7 @@ test('TextareaAdapter#setSelection', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#getLine', assert => {
+test('TextareaAdapter#getLine', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -230,7 +230,7 @@ test('TextareaAdapter#getLine', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#lock', assert => {
+test('TextareaAdapter#lock', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -243,7 +243,7 @@ test('TextareaAdapter#lock', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#unlock', assert => {
+test('TextareaAdapter#unlock', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   textarea.disabled = true;
@@ -257,7 +257,7 @@ test('TextareaAdapter#unlock', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#handleKeydown', assert => {
+test('TextareaAdapter#handleKeydown', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -278,8 +278,13 @@ test('TextareaAdapter#handleKeydown', assert => {
   assert.equal(handler.called, false, 'should not emit action when keymap not registered');
   handler.reset();
 
-  simulant.fire(textarea, 'keydown', { which: keycode('b'), ctrlKey: true, metaKey: true,
-                                       shiftKey: true, altKey: true }); // `Cmd-Ctrl-Shift-Alt-B`
+  simulant.fire(textarea, 'keydown', {
+    which: keycode('b'),
+    ctrlKey: true,
+    metaKey: true,
+    shiftKey: true,
+    altKey: true,
+  }); // `Cmd-Ctrl-Shift-Alt-B`
   assert.ok(handler.calledWith({ action: 'boop' }), 'should emit action with complex keymap');
   handler.reset();
 
@@ -287,7 +292,7 @@ test('TextareaAdapter#handleKeydown', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#setKeymap', assert => {
+test('TextareaAdapter#setKeymap', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -303,7 +308,7 @@ test('TextareaAdapter#setKeymap', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#setToolbar', assert => {
+test('TextareaAdapter#setToolbar', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -334,7 +339,7 @@ test('TextareaAdapter#setToolbar', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#on paste', assert => {
+test('TextareaAdapter#on paste', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
@@ -349,7 +354,7 @@ test('TextareaAdapter#on paste', assert => {
   assert.end();
 });
 
-test('TextareaAdapter#on drop', assert => {
+test('TextareaAdapter#on drop', (assert) => {
   const textarea = document.createElement('textarea');
   const adapter = new TextareaAdapter(textarea);
   adapter.attach();
