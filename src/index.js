@@ -1,8 +1,8 @@
-import 'babel-polyfill';
-import Editor from './Editor';
-import CodeMirrorAdapter from './CodeMirrorAdapter';
-import TextareaAdapter from './TextareaAdapter';
-import GenericAdapter from './GenericAdapter';
+import "babel-polyfill";
+import Editor from "./Editor";
+import CodeMirrorAdapter from "./CodeMirrorAdapter";
+import TextareaAdapter from "./TextareaAdapter";
+import GenericAdapter from "./GenericAdapter";
 
 module.exports = Editor;
 module.exports.CodeMirrorAdapter = CodeMirrorAdapter;

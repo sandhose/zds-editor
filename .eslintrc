@@ -1,14 +1,23 @@
 {
-  "parser": "babel-eslint",
   "extends": [
     "airbnb-base",
-    "plugin:flowtype/recommended"
+    "plugin:flowtype/recommended",
+    "prettier",
+    "prettier/flowtype"
   ],
-  "newTarget": true,
   "env": {
+    "es6": true,
     "browser": true
   },
+  "parserOptions": {
+    "ecmaVersion": 2016,
+    "sourceType": "module"
+  },
+  "rules": {
+    "prettier/prettier": "error"
+  },
   "plugins": [
-    "flowtype"
+    "flowtype",
+    "prettier"
   ]
 }

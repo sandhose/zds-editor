@@ -10,7 +10,7 @@
     "package": "./package.json"
   },
   "babel": {
-    "presets": ["latest", "stage-0"],
+    "presets": ["latest", "stage-1"],
     "plugins": ["transform-flow-strip-types"]
   }
 }

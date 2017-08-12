@@ -1,14 +1,17 @@
+/* @flow */
 /* eslint class-methods-use-this: "off" */
 /**
  * Adapter that does nothing (used for testing & extending)
  * @interface
  */
 class GenericAdapter {
+  text: string;
+
   /**
    * @constructor
    */
   constructor() {
-    this.text = '';
+    this.text = "";
   }
 
   /**
@@ -35,7 +38,7 @@ class GenericAdapter {
    * @abstract
    * @return {Range[]}
    */
-  listSelections() {
+  listSelections(): Array<Range> {
     return [];
   }
 
@@ -51,8 +54,8 @@ class GenericAdapter {
    * @param {Range} range
    * @return {string}
    */
-  getRange() {
-    return '';
+  getRange(): string {
+    return "";
   }
 
   /**
@@ -76,15 +79,15 @@ class GenericAdapter {
    * @param {number} line
    * @return {string}
    */
-  getLine() {
-    return '';
+  getLine(): string {
+    return "";
   }
 
   /**
    * Set the current text
    * @param {string} text
    */
-  setText(text) {
+  setText(text: string) {
     this.text = text;
   }
 
@@ -92,7 +95,7 @@ class GenericAdapter {
    * Get the current text
    * @return {string}
    */
-  getText() {
+  getText(): string {
     return this.text;
   }
 

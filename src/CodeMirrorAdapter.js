@@ -1,7 +1,10 @@
-require('codemirror/mode/gfm/gfm');
-const codemirror = require('codemirror');
-const { Range } = require('./util');
-const { EventEmitter } = require('events');
+/* @flow */
+import type { Toolbar, Keymap } from "./Adapter";
+import { Range } from "./util";
+
+require("codemirror/mode/gfm/gfm");
+const codemirror = require("codemirror");
+const { EventEmitter } = require("events");
 
 /**
  * Adapter to use CodeMirror for the editor
@@ -9,20 +12,32 @@ const { EventEmitter } = require('events');
  * @implements {GenericAdapter}
  */
 class CodeMirrorAdapter extends EventEmitter {
-  constructor(textarea, options = { codemirror: {} }) {
-    if (!textarea || textarea.nodeName !== 'TEXTAREA') throw new Error('No textarea provided');
+  textareaNode: HTMLTextAreaElement;
+  toolbarNode: HTMLDivElement;
+  wrapperNode: HTMLDivElement;
+  options: {
+    codemirror: any
+  };
+  cm: any;
+
+  constructor(
+    textarea: HTMLTextAreaElement,
+    options: any = { codemirror: {} }
+  ) {
+    if (!textarea || textarea.nodeName !== "TEXTAREA")
+      throw new Error("No textarea provided");
     super();
 
     /** @type {HTMLTextAreaElement} */
     this.textareaNode = textarea;
     /** @type {HTMLDivElement} */
-    this.toolbarNode = document.createElement('div');
+    this.toolbarNode = document.createElement("div");
     /** @type {HTMLDivElement} */
-    this.wrapperNode = document.createElement('div');
+    this.wrapperNode = document.createElement("div");
     this.wrapperNode.appendChild(this.toolbarNode);
 
-    this.wrapperNode.className = 'editor-wrapper editor-codemirror-adapter';
-    this.toolbarNode.className = 'editor-toolbar';
+    this.wrapperNode.className = "editor-wrapper editor-codemirror-adapter";
+    this.toolbarNode.className = "editor-toolbar";
 
     this.options = options;
   }
@@ -30,53 +45,67 @@ class CodeMirrorAdapter extends EventEmitter {
   /**
    * Called when the adapter is attached
    */
-  attach() {
+  attach(): void {
     if (this.textareaNode.parentNode) {
-      this.textareaNode.parentNode.insertBefore(this.wrapperNode, this.textareaNode.nextSibling);
+      this.textareaNode.parentNode.insertBefore(
+        this.wrapperNode,
+        this.textareaNode.nextSibling
+      );
     }
     this.wrapperNode.appendChild(this.textareaNode);
 
-    this.cm = codemirror.fromTextArea(this.textareaNode, Object.assign({
-      mode: {
-        name: 'gfm',
-        gitHubSpice: false,
-      },
-      tabMode: 'indent',
-      lineWrapping: true,
-    }, this.options.codemirror));
+    this.cm = codemirror.fromTextArea(
+      this.textareaNode,
+      Object.assign(
+        {
+          mode: {
+            name: "gfm",
+            gitHubSpice: false
+          },
+          tabMode: "indent",
+          lineWrapping: true
+        },
+        this.options.codemirror
+      )
+    );
 
-    this.cm.on('paste', (cm, e) => this.emit('paste', e));
-    this.cm.on('drop', (cm, e) => this.emit('drop', e));
+    this.cm.on("paste", (cm, e) => this.emit("paste", e));
+    this.cm.on("drop", (cm, e) => this.emit("drop", e));
   }
 
   /**
    * Called when the toolbar is changed
    * @param {Map.<string, object>} toolbar
    */
-  setToolbar(toolbar, _toolbarNode = this.toolbarNode) {
-    const toolbarNode = _toolbarNode;
-    toolbarNode.innerHTML = '';
+  setToolbar(toolbar: Toolbar, _toolbarNode: HTMLElement) {
+    const toolbarNode = _toolbarNode || this.toolbarNode;
+    toolbarNode.innerHTML = "";
     const focusHandler = (wrapper, action) => () => {
-      toolbarNode.classList[action]('active');
-      wrapper.classList[action]('active');
+      if (action === "add") {
+        toolbarNode.classList.add("active");
+        wrapper.classList.add("active");
+      } else {
+        toolbarNode.classList.remove("active");
+        wrapper.classList.remove("active");
+      }
     };
 
     toolbar.forEach(({ action, alt, children }, name) => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'editor-button-wrapper';
-      const button = document.createElement('button');
+      const wrapper = document.createElement("div");
+      wrapper.className = "editor-button-wrapper";
+      const button = document.createElement("button");
       button.innerHTML = name;
-      button.classList.add('editor-button');
+      button.classList.add("editor-button");
       if (action.type) button.classList.add(`editor-button-${action.type}`);
       if (alt) button.title = alt;
-      button.addEventListener('click', () => this.emit('action', action));
-      button.addEventListener('focus', focusHandler(wrapper, 'add'));
-      button.addEventListener('blur', focusHandler(wrapper, 'remove'));
+      button.addEventListener("click", () => this.emit("action", action));
+      button.addEventListener("focus", focusHandler(wrapper, "add"));
+      button.addEventListener("blur", focusHandler(wrapper, "remove"));
       wrapper.appendChild(button);
 
       if (children && children.size > 0) {
-        const childWrapper = document.createElement('div');
-        childWrapper.className = 'editor-toolbar-children';
+        const childWrapper = document.createElement("div");
+        childWrapper.className = "editor-toolbar-children";
         this.setToolbar(children, childWrapper);
         wrapper.appendChild(childWrapper);
       }
@@ -89,14 +118,14 @@ class CodeMirrorAdapter extends EventEmitter {
    * Called when the keymap is changed
    * @param {Map.<string, object>} keymap
    */
-  setKeymap(keymap) {
-    const cmKeymap = { fallthrough: 'default' };
+  setKeymap(keymap: Keymap) {
+    const cmKeymap = { fallthrough: "default" };
     const handler = action => () => {
-      if (typeof action === 'function') {
+      if (typeof action === "function") {
         const result = action.call();
         if (result === false) return codemirror.Pass;
       } else {
-        this.emit('action', action);
+        this.emit("action", action);
       }
       return false;
     };
@@ -110,7 +139,7 @@ class CodeMirrorAdapter extends EventEmitter {
       }
     });
 
-    this.cm.setOption('keyMap', codemirror.normalizeKeyMap(cmKeymap));
+    this.cm.setOption("keyMap", codemirror.normalizeKeyMap(cmKeymap));
   }
 
   listSelections() {
@@ -121,17 +150,17 @@ class CodeMirrorAdapter extends EventEmitter {
     this.cm.focus();
   }
 
-  getRange(range) {
+  getRange(range: Range) {
     return this.cm.getRange(range.start, range.end);
   }
 
-  replaceRange(replacement, range) {
+  replaceRange(replacement: string, range: Range) {
     this.cm.replaceRange(replacement, range.start, range.end);
   }
 
-  setSelection(...selections) {
-    const mappedSelections = selections.map((sel) => {
-      if (typeof sel.start !== 'undefined') {
+  setSelection(...selections: Array<Range>) {
+    const mappedSelections = selections.map(sel => {
+      if (typeof sel.start !== "undefined") {
         return { anchor: sel.start, head: sel.end };
       }
       return { anchor: sel };
@@ -140,7 +169,7 @@ class CodeMirrorAdapter extends EventEmitter {
     this.cm.setSelections(mappedSelections);
   }
 
-  getLine(line) {
+  getLine(line: number) {
     return this.cm.doc.getLine(line);
   }
 
@@ -148,17 +177,17 @@ class CodeMirrorAdapter extends EventEmitter {
     return this.cm.doc.getValue();
   }
 
-  setText(text) {
+  setText(text: string) {
     this.cm.doc.setValue(text);
     this.cm.save();
   }
 
   lock() {
-    this.cm.setOption('readOnly', true);
+    this.cm.setOption("readOnly", true);
   }
 
   unlock() {
-    this.cm.setOption('readOnly', false);
+    this.cm.setOption("readOnly", false);
   }
 
   /**
@@ -170,8 +199,9 @@ class CodeMirrorAdapter extends EventEmitter {
 
     this.wrapperNode.removeChild(this.toolbarNode);
     if (this.wrapperNode.parentNode) {
-      this.wrapperNode.parentNode.insertBefore(this.textareaNode, this.wrapperNode.nextSibling);
-      this.wrapperNode.parentNode.removeChild(this.wrapperNode);
+      const node: Node = this.wrapperNode.parentNode;
+      node.insertBefore(this.textareaNode, this.wrapperNode.nextSibling);
+      node.removeChild(this.wrapperNode);
     }
 
     delete this.toolbarNode;
