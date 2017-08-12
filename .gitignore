@@ -4,4 +4,5 @@ node_modules/
 *.swo
 .DS_Store
 .tern-project
+.tern-port
 doc/
