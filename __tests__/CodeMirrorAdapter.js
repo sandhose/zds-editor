@@ -1,89 +1,71 @@
-const test = require("tape");
 const sinon = require("sinon");
 const simulant = require("simulant");
 
 const CodeMirrorAdapter = require("../src/CodeMirrorAdapter.js");
 const { Range, Pos } = require("../src/util");
 
-test("new CodeMirrorAdapter()", assert => {
-  assert.throws(
-    () => new CodeMirrorAdapter(),
-    "throws when no textarea is provided"
-  );
-  assert.throws(
-    () => new CodeMirrorAdapter("beep"),
-    "throws when argument is not a DOMNode"
-  );
-  assert.throws(
-    () => new CodeMirrorAdapter(document.createElement("div")),
-    "throws when node is not a textarea"
-  );
-  assert.doesNotThrow(
-    () => new CodeMirrorAdapter(document.createElement("textarea")),
-    "does not throw when a textarea is provided"
-  );
-  assert.end();
+global.document.createRange = () => ({
+  setEnd: jest.fn(),
+  setStart: jest.fn(),
+  getBoundingClientRect: () => ({ right: 0 }),
+  getClientRects: () => ({
+    length: 0,
+    left: 0,
+    right: 0
+  })
+});
+global.document.body.createTextRange = global.document.createRange;
+
+test("new CodeMirrorAdapter()", () => {
+  expect(() => new CodeMirrorAdapter()).toThrow();
+  expect(() => new CodeMirrorAdapter("beep")).toThrow();
+  expect(() => new CodeMirrorAdapter(document.createElement("div"))).toThrow();
+  expect(
+    () => new CodeMirrorAdapter(document.createElement("textarea"))
+  ).not.toThrow();
 });
 
-test("CodeMirrorAdapter#attach", assert => {
+test("CodeMirrorAdapter#attach", () => {
   const container = document.createElement("div");
   const textarea = document.createElement("textarea");
   container.appendChild(textarea);
   const adapter = new CodeMirrorAdapter(textarea);
 
-  assert.equal(
-    container.children[0],
-    textarea,
-    "textarea is left untouched before attach()"
-  );
+  expect(container.children[0]).toBe(textarea);
   adapter.attach();
 
-  assert.equal(container.children.length, 1, "adapter is wrapped in one node");
-  assert.equal(
-    container.children[0],
-    adapter.wrapperNode,
-    "textarea is replaced by wrapperNode"
-  );
-  assert.ok(
-    container.contains(textarea),
-    "the same textarea is still in container"
-  );
+  expect(container.children.length).toBe(1);
+  expect(container.children[0]).toBe(adapter.wrapperNode);
+  expect(container.contains(textarea)).toBeTruthy();
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#getText", assert => {
+test("CodeMirrorAdapter#getText", () => {
   const textarea = document.createElement("textarea");
   textarea.value = "beep boop";
 
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
-  assert.equal(adapter.getText(), "beep boop", "gets the textarea's value");
+  expect(adapter.getText()).toBe("beep boop");
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#setText", assert => {
+test("CodeMirrorAdapter#setText", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
 
   adapter.setText("beep boop");
-  assert.equal(textarea.value, "beep boop", "changes the textarea's value");
+  expect(textarea.value).toBe("beep boop");
   adapter.setText("beep\nboop");
-  assert.equal(
-    adapter.getText(),
-    "beep\nboop",
-    "reflects the change in getText()"
-  );
+  expect(adapter.getText()).toBe("beep\nboop");
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#listSelections", assert => {
+test("CodeMirrorAdapter#listSelections", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -91,64 +73,49 @@ test("CodeMirrorAdapter#listSelections", assert => {
 
   adapter.setText("beep\nboop");
   adapter.cm.setSelection({ line: 1, ch: 2 }, { line: 0, ch: 2 });
-  assert.deepEqual(
-    adapter.listSelections(),
-    [new Range(new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 2 }))],
-    "returns an array with a Range with the selection"
-  );
+  expect(adapter.listSelections()).toEqual([
+    new Range(new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 2 }))
+  ]);
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#focus", assert => {
+test("CodeMirrorAdapter#focus", () => {
   const textarea = document.createElement("textarea");
   document.body.appendChild(textarea);
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
 
-  assert.notOk(
-    adapter.wrapperNode.contains(document.activeElement),
-    "editor should not have the focus"
-  );
+  expect(adapter.wrapperNode.contains(document.activeElement)).toBeFalsy();
 
   adapter.focus();
-  assert.ok(
-    adapter.wrapperNode.contains(document.activeElement),
-    "editor should have the focus"
-  );
+  expect(adapter.wrapperNode.contains(document.activeElement)).toBeTruthy();
 
   adapter.destroy();
   textarea.remove();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#getRange", assert => {
+test("CodeMirrorAdapter#getRange", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
 
   adapter.setText("beep\nboop");
-  assert.equal(
+  expect(
     adapter.getRange(
       new Range(new Pos({ line: 0, ch: 0 }), new Pos({ line: 0, ch: 4 }))
-    ),
-    "beep",
-    "returns the text of a whole line"
-  );
-  assert.equal(
+    )
+  ).toBe("beep");
+  expect(
     adapter.getRange(
       new Range(new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 2 }))
-    ),
-    "ep\nbo",
-    "returns the text of a multi-line range"
-  );
+    )
+  ).toBe("ep\nbo");
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#replaceRange", assert => {
+test("CodeMirrorAdapter#replaceRange", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -158,7 +125,7 @@ test("CodeMirrorAdapter#replaceRange", assert => {
     "oo",
     new Range(new Pos({ line: 0, ch: 1 }), new Pos({ line: 0, ch: 3 }))
   );
-  assert.equal(adapter.getText(), "boop", "should replace a single-line range");
+  expect(adapter.getText()).toBe("boop");
 
   adapter.setText(`be like a while(1)
 an infinite loop`);
@@ -166,17 +133,12 @@ an infinite loop`);
     "ep bo",
     new Range(new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 14 }))
   );
-  assert.equal(
-    adapter.getText(),
-    "beep boop",
-    "should replace a multi-line range"
-  );
+  expect(adapter.getText()).toBe("beep boop");
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#setSelection", assert => {
+test("CodeMirrorAdapter#setSelection", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -185,87 +147,61 @@ test("CodeMirrorAdapter#setSelection", assert => {
   adapter.setSelection(
     new Range(new Pos({ line: 0, ch: 2 }), new Pos({ line: 1, ch: 2 }))
   );
-  assert.deepEqual(
-    adapter.cm.listSelections(),
-    [{ anchor: { line: 0, ch: 2 }, head: { line: 1, ch: 2 } }],
-    "should select the range"
-  );
+  expect(adapter.cm.listSelections()).toEqual([
+    { anchor: { line: 0, ch: 2 }, head: { line: 1, ch: 2 } }
+  ]);
 
   adapter.setSelection(
     new Range(new Pos({ line: 0, ch: 2 }), new Pos({ line: 0, ch: 4 })),
     new Range(new Pos({ line: 1, ch: 1 }), new Pos({ line: 1, ch: 2 }))
   );
-  assert.deepEqual(
-    adapter.cm.listSelections(),
-    [
-      { anchor: { line: 0, ch: 2 }, head: { line: 0, ch: 4 } },
-      { anchor: { line: 1, ch: 1 }, head: { line: 1, ch: 2 } }
-    ],
-    "should select multiple ranges"
-  );
+  expect(adapter.cm.listSelections()).toEqual([
+    { anchor: { line: 0, ch: 2 }, head: { line: 0, ch: 4 } },
+    { anchor: { line: 1, ch: 1 }, head: { line: 1, ch: 2 } }
+  ]);
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#getLine", assert => {
+test("CodeMirrorAdapter#getLine", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
 
   adapter.setText("beep\nboop");
-  assert.equal(adapter.getLine(0), "beep", "should return the first line");
-  assert.equal(adapter.getLine(1), "boop", "should return the second line");
+  expect(adapter.getLine(0)).toBe("beep");
+  expect(adapter.getLine(1)).toBe("boop");
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#lock", assert => {
+test("CodeMirrorAdapter#lock", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
 
-  assert.equal(
-    adapter.cm.getOption("readOnly"),
-    false,
-    "editor should not be readOnly"
-  );
+  expect(adapter.cm.getOption("readOnly")).toBe(false);
   adapter.lock();
-  assert.equal(
-    adapter.cm.getOption("readOnly"),
-    true,
-    "editor should get locked"
-  );
+  expect(adapter.cm.getOption("readOnly")).toBe(true);
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#unlock", assert => {
+test("CodeMirrorAdapter#unlock", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea, {
     codemirror: { readOnly: true }
   });
   adapter.attach();
 
-  assert.equal(
-    adapter.cm.getOption("readOnly"),
-    true,
-    "editor should be readOnly"
-  );
+  expect(adapter.cm.getOption("readOnly")).toBe(true);
   adapter.unlock();
-  assert.equal(
-    adapter.cm.getOption("readOnly"),
-    false,
-    "editor should get unlocked"
-  );
+  expect(adapter.cm.getOption("readOnly")).toBe(false);
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#setKeymap", assert => {
+test("CodeMirrorAdapter#setKeymap", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -279,27 +215,20 @@ test("CodeMirrorAdapter#setKeymap", assert => {
   const handler = sinon.spy();
   adapter.on("action", handler);
 
-  assert.ok(keys["Ctrl-B"], "first keymap should be set");
+  expect(keys["Ctrl-B"]).toBeTruthy();
   keys["Ctrl-B"].call();
-  assert.ok(
-    handler.calledWith({ action: "beep" }),
-    "first keymap should emit action"
-  );
+  expect(handler.calledWith({ action: "beep" })).toBeTruthy();
   handler.reset();
 
-  assert.ok(keys["Cmd-Ctrl-Alt-B"], "second keybinding should be set");
+  expect(keys["Cmd-Ctrl-Alt-B"]).toBeTruthy();
   keys["Cmd-Ctrl-Alt-B"].call();
-  assert.ok(
-    handler.calledWith({ action: "boop" }),
-    "second keybinding should emit action"
-  );
+  expect(handler.calledWith({ action: "boop" })).toBeTruthy();
   handler.reset();
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#setToolbar", assert => {
+test("CodeMirrorAdapter#setToolbar", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -313,28 +242,19 @@ test("CodeMirrorAdapter#setToolbar", assert => {
   adapter.setToolbar(toolbar);
 
   const buttons = adapter.toolbarNode.querySelectorAll(".editor-button");
-  assert.equal(buttons[0].innerText, "beep", "should append first button");
-  assert.equal(buttons[1].innerText, "boop", "should append second button");
+  expect(buttons[0].innerHTML).toBe("beep");
+  expect(buttons[1].innerHTML).toBe("boop");
 
   simulant.fire(buttons[0], "click"); // Click first button
-  assert.ok(
-    handler.calledWith("beep"),
-    "should emit action event on click on the first button"
-  );
+  expect(handler.calledWith("beep")).toBeTruthy();
   handler.reset();
 
   simulant.fire(buttons[1], "click"); // Click first button
-  assert.ok(
-    handler.calledWith("boop"),
-    "should emit action event on click on the second button"
-  );
+  expect(handler.calledWith("boop")).toBeTruthy();
   handler.reset();
-
-  adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#on paste", assert => {
+test("CodeMirrorAdapter#on paste", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -344,13 +264,12 @@ test("CodeMirrorAdapter#on paste", assert => {
   adapter.on("paste", handler);
 
   simulant.fire(input, "paste");
-  assert.ok(handler.calledOnce, "should be fired");
+  expect(handler.calledOnce).toBeTruthy();
 
   adapter.destroy();
-  assert.end();
 });
 
-test("CodeMirrorAdapter#on drop", assert => {
+test("CodeMirrorAdapter#on drop", () => {
   const textarea = document.createElement("textarea");
   const adapter = new CodeMirrorAdapter(textarea);
   adapter.attach();
@@ -361,8 +280,7 @@ test("CodeMirrorAdapter#on drop", assert => {
   const event = simulant("drop");
   event.dataTransfer = { files: [] };
   simulant.fire(adapter.cm.display.scroller, event);
-  assert.ok(handler.calledOnce, "should be fired");
+  expect(handler.calledOnce).toBeTruthy();
 
   adapter.destroy();
-  assert.end();
 });

@@ -94,7 +94,8 @@ class CodeMirrorAdapter extends EventEmitter {
       const wrapper = document.createElement("div");
       wrapper.className = "editor-button-wrapper";
       const button = document.createElement("button");
-      button.innerHTML = name;
+      const text = document.createTextNode(name);
+      button.appendChild(text);
       button.classList.add("editor-button");
       if (action.type) button.classList.add(`editor-button-${action.type}`);
       if (alt) button.title = alt;

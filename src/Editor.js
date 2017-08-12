@@ -990,7 +990,10 @@ class Editor {
       if (children) {
         children.forEach(child =>
           this.addToolbarButton(
-            Object.assign({}, action, child.action),
+            {
+              name: child.name,
+              action: Object.assign({}, action, child.action)
+            },
             tbItem.children
           )
         );

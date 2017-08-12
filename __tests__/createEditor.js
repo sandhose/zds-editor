@@ -1,4 +1,3 @@
-const test = require("tape");
 const Editor = require("../src/Editor.js");
 const GenericAdapter = require("../src/GenericAdapter");
 
@@ -19,16 +18,8 @@ const destroyEditor = editor => {
 
 module.exports = { createEditor, destroyEditor };
 
-test("Editor#constructor", assert => {
-  assert.plan(2);
-  assert.throws(
-    () => new Editor(),
-    new Error("No adapter provided"),
-    "throws an exception if there is no adapter provided"
-  );
-  assert.doesNotThrow(
-    createEditor,
-    null,
-    "should not throw when an adapter is provided"
-  );
+test("Editor#constructor", () => {
+  expect.assertions(2);
+  expect(() => new Editor()).toThrowError(new Error("No adapter provided"));
+  expect(createEditor).not.toThrowError();
 });
