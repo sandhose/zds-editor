@@ -1,7 +1,7 @@
 /* @flow */
 
 type CmPos = { line: number, ch: number };
-type CmRange = { anchor: CmPos, head: CmPos };
+type CmRange = { anchor: CmPos, head?: CmPos };
 
 /**
  * A position in the editor, with the line & the char number
@@ -77,7 +77,11 @@ class Range {
    * @return {Range}
    */
   static fromCmRange({ anchor, head }: CmRange): Range {
-    return new Range(...Pos.sort(new Pos(anchor), new Pos(head)));
+    if (head) {
+      return new Range(...Pos.sort(new Pos(anchor), new Pos(head)));
+    }
+
+    return new Range(new Pos(anchor));
   }
 }
 

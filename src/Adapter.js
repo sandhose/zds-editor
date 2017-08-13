@@ -2,24 +2,6 @@
 
 import type { Pos, Range } from "./util";
 
-export interface Adapter {
-  attach(): void,
-  destroy(): void,
-  setToolbar(Map<string, any>): void,
-  setKeymap(Map<string, any>): void,
-  listSelections(): Array<Range>,
-  focus(): void,
-  getRange(Range): string,
-  replaceRange(string, Range): void,
-  setSelection(...Array<Range | Pos>): void,
-  getLine(number): string,
-  setText(string): void,
-  getText(): string,
-  lock(): void,
-  unlock(): void,
-  on(string, Function): void
-}
-
 export type SimpleActionType = "code" | "link";
 export type LeveledActionType = "emphasis" | "heading" | "blockquote";
 export type RawAction =
@@ -89,3 +71,21 @@ export type RangeMap = (
   Range,
   number
 ) => string | { text: string, selection: [number, number] };
+
+export interface Adapter {
+  attach(): void,
+  destroy(): void,
+  setToolbar(Toolbar): void,
+  setKeymap(Map<string, any>): void,
+  listSelections(): Array<Range>,
+  focus(): void,
+  getRange(Range): string,
+  replaceRange(string, Range): void,
+  setSelection(...Array<Range | Pos>): void,
+  getLine(number): string,
+  setText(string): void,
+  getText(): string,
+  lock(): void,
+  unlock(): void,
+  on(string, Function): Adapter
+}

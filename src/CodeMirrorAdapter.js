@@ -1,6 +1,6 @@
 /* @flow */
-import type { Toolbar, Keymap } from "./Adapter";
-import { Range } from "./util";
+import type { Toolbar, Keymap, Adapter } from "./Adapter";
+import { Range, Pos } from "./util";
 
 require("codemirror/mode/gfm/gfm");
 const codemirror = require("codemirror");
@@ -9,9 +9,8 @@ const { EventEmitter } = require("events");
 /**
  * Adapter to use CodeMirror for the editor
  * @class
- * @implements {GenericAdapter}
  */
-class CodeMirrorAdapter extends EventEmitter {
+class CodeMirrorAdapter extends EventEmitter implements Adapter {
   textareaNode: HTMLTextAreaElement;
   toolbarNode: HTMLDivElement;
   wrapperNode: HTMLDivElement;
@@ -73,46 +72,48 @@ class CodeMirrorAdapter extends EventEmitter {
     this.cm.on("drop", (cm, e) => this.emit("drop", e));
   }
 
-  /**
-   * Called when the toolbar is changed
-   * @param {Map.<string, object>} toolbar
-   */
-  setToolbar(toolbar: Toolbar, _toolbarNode: HTMLElement) {
-    const toolbarNode = _toolbarNode || this.toolbarNode;
-    toolbarNode.innerHTML = "";
-    const focusHandler = (wrapper, action) => () => {
-      if (action === "add") {
-        toolbarNode.classList.add("active");
-        wrapper.classList.add("active");
-      } else {
-        toolbarNode.classList.remove("active");
-        wrapper.classList.remove("active");
-      }
+  setToolbar(t: Toolbar) {
+    const setToolbar = (toolbar: Toolbar, _toolbarNode: HTMLDivElement) => {
+      const toolbarNode = _toolbarNode.cloneNode(false);
+      const focusHandler = (wrapper, action) => () => {
+        if (action === "add") {
+          toolbarNode.classList.add("active");
+          wrapper.classList.add("active");
+        } else {
+          toolbarNode.classList.remove("active");
+          wrapper.classList.remove("active");
+        }
+      };
+
+      toolbar.forEach(({ action, alt, children }, name) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "editor-button-wrapper";
+        const button = document.createElement("button");
+        const text = document.createTextNode(name);
+        button.appendChild(text);
+        button.classList.add("editor-button");
+        if (action.type) button.classList.add(`editor-button-${action.type}`);
+        if (alt) button.title = alt;
+        button.addEventListener("click", () => this.emit("action", action));
+        button.addEventListener("focus", focusHandler(wrapper, "add"));
+        button.addEventListener("blur", focusHandler(wrapper, "remove"));
+        wrapper.appendChild(button);
+
+        if (children && children.size > 0) {
+          const childWrapper = document.createElement("div");
+          childWrapper.className = "editor-toolbar-children";
+          setToolbar(children, childWrapper);
+          wrapper.appendChild(childWrapper);
+        }
+
+        toolbarNode.appendChild(wrapper);
+      });
+
+      if (_toolbarNode.parentNode)
+        _toolbarNode.parentNode.replaceChild(_toolbarNode, toolbarNode);
     };
 
-    toolbar.forEach(({ action, alt, children }, name) => {
-      const wrapper = document.createElement("div");
-      wrapper.className = "editor-button-wrapper";
-      const button = document.createElement("button");
-      const text = document.createTextNode(name);
-      button.appendChild(text);
-      button.classList.add("editor-button");
-      if (action.type) button.classList.add(`editor-button-${action.type}`);
-      if (alt) button.title = alt;
-      button.addEventListener("click", () => this.emit("action", action));
-      button.addEventListener("focus", focusHandler(wrapper, "add"));
-      button.addEventListener("blur", focusHandler(wrapper, "remove"));
-      wrapper.appendChild(button);
-
-      if (children && children.size > 0) {
-        const childWrapper = document.createElement("div");
-        childWrapper.className = "editor-toolbar-children";
-        this.setToolbar(children, childWrapper);
-        wrapper.appendChild(childWrapper);
-      }
-
-      toolbarNode.appendChild(wrapper);
-    });
+    setToolbar(t, this.toolbarNode);
   }
 
   /**
@@ -159,9 +160,9 @@ class CodeMirrorAdapter extends EventEmitter {
     this.cm.replaceRange(replacement, range.start, range.end);
   }
 
-  setSelection(...selections: Array<Range>) {
+  setSelection(...selections: Array<Range | Pos>) {
     const mappedSelections = selections.map(sel => {
-      if (typeof sel.start !== "undefined") {
+      if (sel instanceof Range) {
         return { anchor: sel.start, head: sel.end };
       }
       return { anchor: sel };

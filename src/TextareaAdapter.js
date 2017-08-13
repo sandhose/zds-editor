@@ -1,3 +1,6 @@
+// @flow
+import type { Toolbar, Keymap, Adapter } from "./Adapter";
+
 const { Pos, Range } = require("./util");
 const keycode = require("keycode");
 const { EventEmitter } = require("events");
@@ -5,15 +8,24 @@ const { EventEmitter } = require("events");
 /**
  * Adapter to use a standard textarea element
  * @class
- * @implements {GenericAdapter}
  * @extends {EventEmitter}
  */
-class TextareaAdapter extends EventEmitter {
+class TextareaAdapter extends EventEmitter implements Adapter {
+  textareaNode: HTMLTextAreaElement;
+  toolbarNode: HTMLDivElement;
+  wrapperNode: HTMLDivElement;
+  handlers: {
+    keydown: KeyboardEvent => boolean,
+    drop: DragEvent => boolean,
+    paste: Event => boolean
+  };
+  keymap: Keymap;
+
   /**
    * @constructor
    * @param {HTMLTextAreaElement} textarea
    */
-  constructor(textarea) {
+  constructor(textarea: HTMLTextAreaElement) {
     if (!textarea || textarea.nodeName !== "TEXTAREA")
       throw new Error("No textarea provided");
     super();
@@ -43,7 +55,7 @@ class TextareaAdapter extends EventEmitter {
     this.wrapperNode.appendChild(this.textareaNode);
 
     this.handlers = {
-      keydown: e => this.handleKeydown(e),
+      keydown: (e: KeyboardEvent) => this.handleKeydown(e),
       paste: e => this.emit("paste", e),
       drop: e => this.emit("drop", e)
     };
@@ -57,44 +69,55 @@ class TextareaAdapter extends EventEmitter {
    * Called when the toolbar is changed
    * @param {Map.<string, object>} toolbar
    */
-  setToolbar(toolbar, _toolbarNode = this.toolbarNode) {
-    const toolbarNode = _toolbarNode;
-    toolbarNode.innerHTML = "";
-    const focusHandler = (wrapper, action) => () => {
-      toolbarNode.classList[action]("active");
-      wrapper.classList[action]("active");
+  setToolbar(t: Toolbar) {
+    const setToolbar = (toolbar: Toolbar, _toolbarNode: HTMLDivElement) => {
+      const toolbarNode = _toolbarNode.cloneNode(false);
+      const focusHandler = (wrapper, action: "add" | "remove") => () => {
+        if (action === "add") {
+          toolbarNode.classList.add("active");
+          wrapper.classList.add("active");
+        } else {
+          toolbarNode.classList.remove("active");
+          wrapper.classList.remove("active");
+        }
+      };
+
+      toolbar.forEach(({ action, alt, children }, name) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "editor-button-wrapper";
+        const button = document.createElement("button");
+        const text = document.createTextNode(name);
+        button.appendChild(text);
+        button.classList.add("editor-button");
+        if (action.type) button.classList.add(`editor-button-${action.type}`);
+        if (alt) button.title = alt;
+        button.addEventListener("click", () => this.emit("action", action));
+        button.addEventListener("focus", focusHandler(wrapper, "add"));
+        button.addEventListener("blur", focusHandler(wrapper, "remove"));
+        wrapper.appendChild(button);
+
+        if (children && children.size > 0) {
+          const childWrapper = document.createElement("div");
+          childWrapper.className = "editor-toolbar-children";
+          setToolbar(children, childWrapper);
+          wrapper.appendChild(childWrapper);
+        }
+
+        toolbarNode.appendChild(wrapper);
+      });
+
+      if (_toolbarNode.parentNode)
+        _toolbarNode.parentNode.replaceChild(_toolbarNode, toolbarNode);
     };
 
-    toolbar.forEach(({ action, alt, children }, name) => {
-      const wrapper = document.createElement("div");
-      wrapper.className = "editor-button-wrapper";
-      const button = document.createElement("button");
-      const text = document.createTextNode(name);
-      button.appendChild(text);
-      button.classList.add("editor-button");
-      if (action.type) button.classList.add(`editor-button-${action.type}`);
-      if (alt) button.title = alt;
-      button.addEventListener("click", () => this.emit("action", action));
-      button.addEventListener("focus", focusHandler(wrapper, "add"));
-      button.addEventListener("blur", focusHandler(wrapper, "remove"));
-      wrapper.appendChild(button);
-
-      if (children && children.size > 0) {
-        const childWrapper = document.createElement("div");
-        childWrapper.className = "editor-toolbar-children";
-        this.setToolbar(children, childWrapper);
-        wrapper.appendChild(childWrapper);
-      }
-
-      toolbarNode.appendChild(wrapper);
-    });
+    setToolbar(t, this.toolbarNode);
   }
 
   /**
    * Called when the keymap is changed
    * @param {Map.<string, object>} keymap
    */
-  setKeymap(keymap) {
+  setKeymap(keymap: Keymap) {
     this.keymap = keymap;
   }
 
@@ -102,16 +125,16 @@ class TextareaAdapter extends EventEmitter {
    * Handle a keydown event
    * @param {KeyboardEvent} event
    */
-  handleKeydown(event) {
+  handleKeydown(event: KeyboardEvent): boolean {
     const modifiers = [
-      { name: "Cmd", key: "metaKey" },
-      { name: "Ctrl", key: "ctrlKey" },
-      { name: "Shift", key: "shiftKey" },
-      { name: "Alt", key: "altKey" }
+      ["Cmd", e => e.metaKey],
+      ["Ctrl", e => e.ctrlKey],
+      ["Shift", e => e.shiftKey],
+      ["Alt", e => e.altKey]
     ];
 
     let keyStr = modifiers.reduce(
-      (str, { name, key }) => (event[key] ? `${str}${name}-` : str),
+      (str, [name, down]) => (down(event) ? `${str}${name}-` : str),
       ""
     );
 
@@ -122,12 +145,17 @@ class TextareaAdapter extends EventEmitter {
       const action = this.keymap.get(keyStr);
       if (typeof action === "function") {
         const result = action.call();
-        if (result !== false) event.preventDefault();
+        if (result !== false) {
+          event.preventDefault();
+          return true;
+        }
       } else {
         event.preventDefault();
-        this.emit("action", action);
+        return this.emit("action", action);
       }
     }
+
+    return false;
   }
 
   /**
@@ -143,7 +171,7 @@ class TextareaAdapter extends EventEmitter {
    * @param {number} index
    * @return {Pos}
    */
-  getPosFromIndex(index) {
+  getPosFromIndex(index: number) {
     const text = this.getLines();
     let charsBefore = 0;
     for (let i = 0; i < text.length; i += 1) {
@@ -168,7 +196,7 @@ class TextareaAdapter extends EventEmitter {
    * @param {Pos} pos
    * @return {number}
    */
-  getIndexFromPos(pos) {
+  getIndexFromPos(pos: Pos) {
     const text = this.getLines();
     let n = 0;
     for (let i = 0; i < pos.line; i += 1) {
@@ -190,15 +218,17 @@ class TextareaAdapter extends EventEmitter {
     this.textareaNode.focus();
   }
 
-  getRange(range) {
+  getRange(range: Range) {
     const text = this.getLines().slice(range.start.line, range.end.line + 1);
     text[text.length - 1] = text[text.length - 1].substring(0, range.end.ch);
     text[0] = text[0].substring(range.start.ch);
     return text.join("\n");
   }
 
-  replaceRange(replacement, range) {
-    if (document.queryCommandEnabled("insertText")) {
+  replaceRange(replacement: string, range: Range) {
+    // see https://github.com/facebook/flow/issues/4335
+    // $FlowFixMe
+    if (document.queryCommandSupported("insertText")) {
       this.setSelection(range);
       this.focus();
       document.execCommand("insertText", false, replacement);
@@ -213,14 +243,19 @@ class TextareaAdapter extends EventEmitter {
     }
   }
 
-  setSelection(range) {
-    this.textareaNode.setSelectionRange(
-      this.getIndexFromPos(range.start),
-      this.getIndexFromPos(range.end)
-    );
+  setSelection(sel: Range | Pos) {
+    if (sel instanceof Range) {
+      this.textareaNode.setSelectionRange(
+        this.getIndexFromPos(sel.start),
+        this.getIndexFromPos(sel.end)
+      );
+    } else {
+      const index = this.getIndexFromPos(sel);
+      this.textareaNode.setSelectionRange(index, index);
+    }
   }
 
-  getLine(line) {
+  getLine(line: number) {
     return this.getLines()[line];
   }
 
@@ -228,7 +263,7 @@ class TextareaAdapter extends EventEmitter {
     return this.textareaNode.value;
   }
 
-  setText(text) {
+  setText(text: string) {
     this.textareaNode.value = text;
   }
 
@@ -252,14 +287,13 @@ class TextareaAdapter extends EventEmitter {
 
     this.wrapperNode.removeChild(this.textareaNode);
     this.wrapperNode.removeChild(this.toolbarNode);
-    if (this.wrapperNode.parentNode) {
-      this.wrapperNode.parentNode.insertBefore(
-        this.textareaNode,
-        this.wrapperNode
-      );
-      this.wrapperNode.parentNode.removeChild(this.wrapperNode);
+    const parentNode = this.wrapperNode.parentNode;
+    if (parentNode) {
+      parentNode.insertBefore(this.textareaNode, this.wrapperNode);
+      parentNode.removeChild(this.wrapperNode);
     }
 
+    // FIXME: should we really destroy this?
     delete this.toolbarNode;
     delete this.wrapperNode;
   }
