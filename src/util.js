@@ -1,7 +1,8 @@
 /* @flow */
 
-type CmPos = { line: number, ch: number };
-type CmRange = { anchor: CmPos, head?: CmPos };
+import type { Position } from "codemirror";
+
+type CmRange = { anchor: Position, head: Position };
 
 /**
  * A position in the editor, with the line & the char number
@@ -16,7 +17,7 @@ class Pos {
    * @param {number} pos.line
    * @param {number} pos.ch
    */
-  constructor({ line, ch }: CmPos) {
+  constructor({ line, ch }: Position) {
     if (typeof line !== "number") throw new TypeError("line is not a number");
     if (typeof ch !== "number") throw new TypeError("ch is not a number");
     /** @type {number} */

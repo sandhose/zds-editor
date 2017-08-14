@@ -15,9 +15,9 @@ class TextareaAdapter extends EventEmitter implements Adapter {
   toolbarNode: HTMLDivElement;
   wrapperNode: HTMLDivElement;
   handlers: {
-    keydown: KeyboardEvent => boolean,
-    drop: DragEvent => boolean,
-    paste: Event => boolean
+    keydown: KeyboardEvent => void,
+    drop: DragEvent => void,
+    paste: Event => void
   };
   keymap: Keymap;
 
@@ -55,9 +55,15 @@ class TextareaAdapter extends EventEmitter implements Adapter {
     this.wrapperNode.appendChild(this.textareaNode);
 
     this.handlers = {
-      keydown: (e: KeyboardEvent) => this.handleKeydown(e),
-      paste: e => this.emit("paste", e),
-      drop: e => this.emit("drop", e)
+      keydown: (e: KeyboardEvent) => {
+        this.handleKeydown(e);
+      },
+      paste: e => {
+        this.emit("paste", e);
+      },
+      drop: e => {
+        this.emit("drop", e);
+      }
     };
 
     this.textareaNode.addEventListener("keydown", this.handlers.keydown);
@@ -107,10 +113,11 @@ class TextareaAdapter extends EventEmitter implements Adapter {
       });
 
       if (_toolbarNode.parentNode)
-        _toolbarNode.parentNode.replaceChild(_toolbarNode, toolbarNode);
+        _toolbarNode.parentNode.replaceChild(toolbarNode, _toolbarNode);
+      return toolbarNode;
     };
 
-    setToolbar(t, this.toolbarNode);
+    this.toolbarNode = setToolbar(t, this.toolbarNode);
   }
 
   /**
@@ -125,7 +132,7 @@ class TextareaAdapter extends EventEmitter implements Adapter {
    * Handle a keydown event
    * @param {KeyboardEvent} event
    */
-  handleKeydown(event: KeyboardEvent): boolean {
+  handleKeydown(event: KeyboardEvent): void {
     const modifiers = [
       ["Cmd", e => e.metaKey],
       ["Ctrl", e => e.ctrlKey],
@@ -147,15 +154,12 @@ class TextareaAdapter extends EventEmitter implements Adapter {
         const result = action.call();
         if (result !== false) {
           event.preventDefault();
-          return true;
         }
       } else {
         event.preventDefault();
-        return this.emit("action", action);
+        this.emit("action", action);
       }
     }
-
-    return false;
   }
 
   /**
@@ -228,7 +232,7 @@ class TextareaAdapter extends EventEmitter implements Adapter {
   replaceRange(replacement: string, range: Range) {
     // see https://github.com/facebook/flow/issues/4335
     // $FlowFixMe
-    if (document.queryCommandSupported("insertText")) {
+    if (document.queryCommandEnabled("insertText")) {
       this.setSelection(range);
       this.focus();
       document.execCommand("insertText", false, replacement);

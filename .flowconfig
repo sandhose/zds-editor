@@ -4,5 +4,6 @@ __tests__/*
 [include]
 
 [libs]
+flow-typed
 
 [options]
